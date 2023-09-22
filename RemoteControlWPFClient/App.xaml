@@ -2,8 +2,11 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:RemoteControlWPFClient"
+             xmlns:mvvm="clr-namespace:RemoteControlWPFClient.MVVM.IoC"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <mvvm:ViewModelLocator x:Key="vmLocator" />
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
