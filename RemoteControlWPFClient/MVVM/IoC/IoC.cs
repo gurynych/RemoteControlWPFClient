@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using NetworkMessage.Cryptography;
+using NetworkMessage.Cryptography.KeyStore;
 using RemoteControlServer.BusinessLogic.Services;
+using RemoteControlWPFClient.BusinessLogic.KeyStore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RemoteControlWPFClient.MVVM.IoC
 {
@@ -15,12 +16,11 @@ namespace RemoteControlWPFClient.MVVM.IoC
         public static void Init()
         {
             ServiceCollection services = new ServiceCollection();
-            Type[] assemblyTypes = typeof(IoC).Assembly.GetTypes();
+            IEnumerable<Type> assemblyTypes = typeof(IoC).Assembly.GetTypes().Where(x => x.IsClass);
             List<Type> singltoneTypes = new List<Type>();
             foreach (Type type in assemblyTypes)
             {
                 Type[] interfaces = type.GetInterfaces();
-
                 if (interfaces.Contains(typeof(ISingleton)))
                 {
                     singltoneTypes.Add(type);
@@ -32,9 +32,14 @@ namespace RemoteControlWPFClient.MVVM.IoC
                 }
             }
 
+            services.AddSingleton<IAsymmetricCryptographer, RSACryptographer>();
+            services.AddSingleton<IHashCreater, BCryptCreater>();
+            services.AddSingleton<AsymmetricKeyStoreBase, ClientKeyStore>();
+            singltoneTypes.AddRange(new[] { typeof(IAsymmetricCryptographer), typeof(IHashCreater) });
+
             provider = services.BuildServiceProvider();
 
-            // Регистрируем ISingltone зависимости
+            // Registration Singleton dependencies
             foreach (Type singltoneType in singltoneTypes)
             {
                 _ = provider.GetRequiredService(singltoneType);
