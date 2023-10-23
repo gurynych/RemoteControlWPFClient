@@ -1,5 +1,4 @@
-﻿using RemoteControlServer.BusinessLogic.Services;
-using RemoteControlWPFClient.MVVM.ViewModels;
+﻿using RemoteControlWPFClient.MVVM.ViewModels;
 
 namespace RemoteControlWPFClient.MVVM.IoC
 {

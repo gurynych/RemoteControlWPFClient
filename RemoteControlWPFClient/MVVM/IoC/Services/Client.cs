@@ -3,21 +3,20 @@ using NetworkMessage.Commands;
 using NetworkMessage.CommandsResaults;
 using NetworkMessage.Cryptography;
 using NetworkMessage.Cryptography.KeyStore;
-using RemoteControlWPFClient.MVVM.IoC;
 using System;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RemoteControlServer.BusinessLogic.Services
+namespace RemoteControlWPFClient.MVVM.IoC.Services
 {
-    public class Сlient : TcpClientCryptoCommunicator, ISingleton
+    public class Client : TcpClientCryptoCommunicator, ISingleton
     {
         public const string ServerIP = "127.0.0.1";
         public const int ServerPort = 11000;       
         private CancellationTokenSource cancelTokenSrc;
 
-        public Сlient(IAsymmetricCryptographer cryptographer, AsymmetricKeyStoreBase keyStore)
+        public Client(IAsymmetricCryptographer cryptographer, AsymmetricKeyStoreBase keyStore)
             : base(new TcpClient(), cryptographer, keyStore)
         {
             cancelTokenSrc = new CancellationTokenSource();
@@ -66,26 +65,37 @@ namespace RemoteControlServer.BusinessLogic.Services
             cancelTokenSrc.Dispose();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <exception cref="TimeoutException"></exception>
+        /// <exception cref="OperationCanceledException"></exception>
+        /// <exception cref="ObjectDisposedException"></exception>
         public override void Handshake(CancellationToken token)
         {
+            //s->r
+
             int repeatCount = 0;
             byte[] clientPublicKey = keyStore.GetPublicKey();
             PublicKeyResult publicKeyResult = new PublicKeyResult(clientPublicKey);
             SendPublicKey(publicKeyResult);
-            HwidCommand hwidCommand;
-            do
+
+            HwidCommand hwidCommand = Receive() as HwidCommand;
+            if (hwidCommand == null) hwidCommand = Receive() as HwidCommand;
+            /*do
             {
                 token.ThrowIfCancellationRequested();
-                if (repeatCount == 3)
+                if (repeatCount == 1)
                 {
-                    throw new SocketException();
+                    throw new TimeoutException();
                 }
 
                 hwidCommand = Receive() as HwidCommand;
                 repeatCount++;
-            } while (hwidCommand == default);
+            } while (hwidCommand == default);*/
 
-            INetworkCommandResult hwidResult = hwidCommand.Do().Result;
+            INetworkCommandResult hwidResult = hwidCommand?.Do().Result;
             Send(hwidResult);
         }
     }
