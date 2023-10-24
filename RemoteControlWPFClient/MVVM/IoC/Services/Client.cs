@@ -68,8 +68,7 @@ namespace RemoteControlWPFClient.MVVM.IoC.Services
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="token"></param>
-        /// <exception cref="TimeoutException"></exception>
+        /// <param name="token"></param>        
         /// <exception cref="OperationCanceledException"></exception>
         /// <exception cref="ObjectDisposedException"></exception>
         public override void Handshake(CancellationToken token)

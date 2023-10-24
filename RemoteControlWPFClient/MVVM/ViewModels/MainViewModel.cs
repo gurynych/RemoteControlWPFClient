@@ -1,4 +1,5 @@
-﻿using NetworkMessage.Commands;
+﻿using DevExpress.Mvvm.Native;
+using NetworkMessage.Commands;
 using NetworkMessage.CommandsResaults;
 using Newtonsoft.Json;
 using RemoteControlWPFClient.MVVM.AttachedProperties;
@@ -36,23 +37,28 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
             this.client = client;
         }
 
-        public ICommand MainWindowLoadedCommand => new AwaitableCommand(ConnectToServerSocket);
+        public ICommand MainWindowLoadedCommand => new AwaitableCommand(ConnectToServerAsync);
 
-        public ILoadedAction MainWindowLoadedAction => new DelegateLoadedAction(ConnectToServerSocket);
+        public ILoadedAction MainWindowLoadedAction => new DelegateLoadedAction(ConnectToServerAsync);
 
-        private async Task ConnectToServerSocket()
+        private async Task ConnectToServerAsync()
         {
-            CancellationTokenSource tokenFactory = new CancellationTokenSource(5000);
+            CancellationTokenSource tokenSource = new CancellationTokenSource(5000);
             try
             {
-                User userFromFile = await ReadUserFromFile(tokenFactory.Token);
+                User userFromFile = await ReadUserFromFile(tokenSource.Token);
                 NameValueCollection parameters = await GetAuthParametersAsync(userFromFile);
-                byte[] serverPublicKey = await GetServerPublicKeyFromAPI(userFromFile, parameters);
-                CancellationTokenSource tokenSource = new CancellationTokenSource(10000);
+                byte[] serverPublicKey = await UserAuthorizationUseAPI(parameters);
+                if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
+                {
+                    throw new NullReferenceException();
+                }
+
+                tokenSource.CancelAfter(10000);
                 if (await client.ConnectAsync())
                 {
                     client.SetExternalPublicKey(serverPublicKey);
-                    client.Handshake(tokenSource.Token);                    
+                    client.Handshake(tokenSource.Token);
                 }
             }
             catch (OperationCanceledException)
@@ -60,6 +66,10 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 //logger.LogError();
                 MessageBox.Show("Время подключения к серверу истекло");
             }
+            catch (FileNotFoundException)
+            {
+                //Показать окно регистрации/авторизации
+            }            
             catch (Exception)
             {
                 //logger.LogError();
@@ -82,7 +92,12 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
             }*/
         }
 
-        private async Task<byte[]> GetServerPublicKeyFromAPI(User user, NameValueCollection parameters)
+        /// <summary>
+        /// Авторизация пользователя при помощи API сервера
+        /// </summary>        
+        /// <param name="parameters">Параметры, необходимые для запроса к API</param>
+        /// <returns>В случае успешной авторизации возвращается открытый ключ сервера, в противном случае - null</returns>
+        private async Task<byte[]> UserAuthorizationUseAPI(NameValueCollection parameters)
         {
             try
             {
@@ -116,6 +131,10 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
             }
         }
 
+        /// <summary>
+        /// Предоставляет NameValueCollection параметры для обращения к серверу
+        /// </summary>
+        /// <param name="user">Данные для авторизации текущего пользователя</param>        
         private async Task<NameValueCollection> GetAuthParametersAsync(User user)
         {
             HwidCommand hwidCommand = new HwidCommand();
@@ -137,8 +156,18 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
             return parameters;
         }
 
+        /// <summary>
+        /// Асинхронное чтение данных пользователя из файла
+        /// </summary>                
+        /// <exception cref="FileNotFoundException"/>
+        /// /// /// <exception cref="OperationCanceledException"/>
         private async Task<User> ReadUserFromFile(CancellationToken token)
         {
+            if (!File.Exists(userDataPath))
+            {
+                throw new FileNotFoundException();
+            }
+
             Memory<byte> bytes = new Memory<byte>();
             try
             {
@@ -150,13 +179,23 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 string userJson = Encoding.UTF8.GetString(bytes.ToArray());
                 User user = JsonConvert.DeserializeObject<User>(userJson);
                 return user;
-            }
-            catch (OperationCanceledException ex) { throw ex; }
+            }            
             catch (Exception) { return default; }
         }
 
+        /// <summary>
+        /// Асинхронная записть данных пользователя в файл
+        /// </summary>
+        /// <param name="user">Текущий пользователь</param>        
+        /// <exception cref="FileNotFoundException"/>
+        /// <exception cref="OperationCanceledException"/>
         private async Task WriteUserToFile(User user, CancellationToken token)
         {
+            if (!File.Exists(userDataPath))
+            {
+                throw new FileNotFoundException();
+            }
+
             string userJson = JsonConvert.SerializeObject(user);
             byte[] bytes = Encoding.UTF8.GetBytes(userJson);
             try
@@ -164,7 +203,6 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 using FileStream stream = File.OpenWrite(userDataPath);
                 await stream.WriteAsync(bytes, token);
             }
-            catch (OperationCanceledException ex) { throw ex; }
             catch (Exception) { }
         }
     }
