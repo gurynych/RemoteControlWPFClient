@@ -1,7 +1,10 @@
 ﻿using DevExpress.Mvvm.Native;
 using NetworkMessage.Commands;
 using NetworkMessage.CommandsResaults;
+using NetworkMessage.Cryptography;
+using NetworkMessage.Cryptography.KeyStore;
 using Newtonsoft.Json;
+using RemoteControlWPFClient.BusinessLogic.KeyStore;
 using RemoteControlWPFClient.MVVM.AttachedProperties;
 using RemoteControlWPFClient.MVVM.Command;
 using RemoteControlWPFClient.MVVM.IoC;
@@ -32,7 +35,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
 
         public string Password { get; set; }
 
-        public MainViewModel(Client client)
+        public MainViewModel(Client client, AsymmetricKeyStoreBase clientKey)
         {
             this.client = client;
         }
@@ -46,7 +49,8 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
             CancellationTokenSource tokenSource = new CancellationTokenSource(5000);
             try
             {
-                User userFromFile = await ReadUserFromFile(tokenSource.Token);
+                //User userFromFile = await ReadUserFromFile(tokenSource.Token);
+                User userFromFile = null;
                 NameValueCollection parameters = await GetAuthParametersAsync(userFromFile);
                 byte[] serverPublicKey = await UserAuthorizationUseAPI(parameters);
                 if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
@@ -54,11 +58,12 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                     throw new NullReferenceException();
                 }
 
-                tokenSource.CancelAfter(10000);
+                //tokenSource.CancelAfter(100000);
+                tokenSource = new CancellationTokenSource(10000);
                 if (await client.ConnectAsync())
                 {
                     client.SetExternalPublicKey(serverPublicKey);
-                    client.Handshake(tokenSource.Token);
+                    await client.Handshake(tokenSource.Token);
                 }
             }
             catch (OperationCanceledException)

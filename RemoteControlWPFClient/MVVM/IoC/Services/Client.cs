@@ -71,31 +71,20 @@ namespace RemoteControlWPFClient.MVVM.IoC.Services
         /// <param name="token"></param>        
         /// <exception cref="OperationCanceledException"></exception>
         /// <exception cref="ObjectDisposedException"></exception>
-        public override void Handshake(CancellationToken token)
+        public override async Task Handshake(CancellationToken token)
         {
-            //s->r
-
-            int repeatCount = 0;
+            //s->r->s            
             byte[] clientPublicKey = keyStore.GetPublicKey();
             PublicKeyResult publicKeyResult = new PublicKeyResult(clientPublicKey);
-            SendPublicKey(publicKeyResult);
+            await SendPublicKeyAsync(publicKeyResult, token);
 
-            HwidCommand hwidCommand = Receive() as HwidCommand;
-            if (hwidCommand == null) hwidCommand = Receive() as HwidCommand;
-            /*do
+            INetworkObject networkObject = await ReceiveAsync(token);
+            if (networkObject is INetworkCommand command)
             {
-                token.ThrowIfCancellationRequested();
-                if (repeatCount == 1)
-                {
-                    throw new TimeoutException();
-                }
-
-                hwidCommand = Receive() as HwidCommand;
-                repeatCount++;
-            } while (hwidCommand == default);*/
-
-            INetworkCommandResult hwidResult = hwidCommand?.Do().Result;
-            Send(hwidResult);
+                INetworkCommandResult hwidResult = await command.Do();
+                await SendAsync(hwidResult, token);
+            }
+            else throw new NullReferenceException(nameof(networkObject));
         }
     }
 }
