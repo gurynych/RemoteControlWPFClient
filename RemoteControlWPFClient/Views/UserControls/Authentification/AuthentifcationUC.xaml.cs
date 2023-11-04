@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace RemoteControlWPFClient.Views.Authentification
+namespace RemoteControlWPFClient.Views.UserControls.Authentification
 {
     /// <summary>
-    /// Логика взаимодействия для AuthorizationUC.xaml
+    /// Логика взаимодействия для AuthentifcationUC.xaml
     /// </summary>
-    public partial class AuthorizationUC : UserControl
+    public partial class AuthentifcationUC : UserControl
     {
-        public AuthorizationUC()
+        public AuthentifcationUC()
         {
             InitializeComponent();
         }

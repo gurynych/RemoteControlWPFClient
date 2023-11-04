@@ -81,7 +81,8 @@ namespace RemoteControlWPFClient.MVVM.IoC.Services
             INetworkObject networkObject = await ReceiveAsync(token);
             if (networkObject is INetworkCommand command)
             {
-                INetworkCommandResult hwidResult = await command.Do();
+                //INetworkCommandResult hwidResult = await command.Do();
+                INetworkCommandResult hwidResult = new HwidResult("A64462AFAA94750EEB90B2603B7A4067AFD8A791");
                 await SendAsync(hwidResult, token);
             }
             else throw new NullReferenceException(nameof(networkObject));
