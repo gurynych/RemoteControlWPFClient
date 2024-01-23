@@ -38,7 +38,7 @@
                  md:ValidationAssist.FontSize="12"
                  md:TextFieldAssist.HasClearButton="True"
                  md:HintAssist.IsFloating="True"
-                 Text="{Binding RegLogin, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+                 Text="{Binding RegLogin, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
 
 
         <TextBox Grid.Row="1"

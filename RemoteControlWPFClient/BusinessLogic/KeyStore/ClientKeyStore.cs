@@ -1,6 +1,5 @@
-﻿using NetworkMessage.Cryptography;
+﻿using NetworkMessage.Cryptography.AsymmetricCryptography;
 using NetworkMessage.Cryptography.KeyStore;
-using RemoteControlWPFClient.MVVM.IoC;
 
 namespace RemoteControlWPFClient.BusinessLogic.KeyStore
 {

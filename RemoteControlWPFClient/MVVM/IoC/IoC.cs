@@ -1,6 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using NetworkMessage.Cryptography;
+using NetworkMessage.CommandFactory;
+using NetworkMessage.Cryptography.AsymmetricCryptography;
+using NetworkMessage.Cryptography.Hash;
 using NetworkMessage.Cryptography.KeyStore;
+using NetworkMessage.Cryptography.SymmetricCryptography;
+using NetworkMessage.Windows;
 using RemoteControlWPFClient.BusinessLogic.KeyStore;
 using System;
 using System.Collections.Generic;
@@ -30,7 +34,9 @@ namespace RemoteControlWPFClient.MVVM.IoC
             }
 
             services.AddSingleton<IAsymmetricCryptographer, RSACryptographer>();
+            services.AddSingleton<ISymmetricCryptographer, AESCryptographer>();
             services.AddSingleton<IHashCreater, BCryptCreater>();
+            services.AddTransient<ICommandFactory,WindowsCommandFactory>();
             services.AddSingleton<AsymmetricKeyStoreBase, ClientKeyStore>();
 
             provider = services.BuildServiceProvider();

@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using DevExpress.Mvvm.Native;
+using RemoteControlWPFClient.BusinessLogic.Services;
 using RemoteControlWPFClient.BusinessLogic.Helpers;
-using RemoteControlWPFClient.BusinessLogic.ServerAPIProvider;
 using RemoteControlWPFClient.MVVM.Command;
 using RemoteControlWPFClient.MVVM.Events;
 using RemoteControlWPFClient.MVVM.IoC;
@@ -72,7 +72,8 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
             try
             {
                 User user = new User(AuthEmail, AuthPassword);
-                byte[] serverPublicKey = await ServerAPIProvider.UserAuthorizationUseAPIAsync(user);
+                ServerAPIProviderService serverAPIProviderService = new ServerAPIProviderService();
+                byte[] serverPublicKey = await serverAPIProviderService.UserAuthorizationUseAPIAsync(user);
                 if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
                 {
                     throw new NullReferenceException();
@@ -132,7 +133,8 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
             try
             {
                 User user = new User(RegLogin, RegEmail, RegPassword);
-                byte[] serverPublicKey = await ServerAPIProvider.UserRegistrationUseAPIAsync(user);
+                ServerAPIProviderService server = new ServerAPIProviderService();
+                byte[] serverPublicKey = await server.UserRegistrationUseAPIAsync(user);
                 if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
                 {
                     throw new NullReferenceException();

@@ -14,6 +14,8 @@ namespace RemoteControlWPFClient.MVVM.Models
 
         public string Password { get; set; }
 
+        public byte[] AuthToken { get; set; }
+
         public User()
         {            
 

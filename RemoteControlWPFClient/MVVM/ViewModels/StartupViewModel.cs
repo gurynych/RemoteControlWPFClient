@@ -1,11 +1,12 @@
 ﻿using DevExpress.Mvvm.Native;
 using RemoteControlWPFClient.BusinessLogic.Helpers;
-using RemoteControlWPFClient.BusinessLogic.ServerAPIProvider;
+using RemoteControlWPFClient.BusinessLogic.Services;
 using RemoteControlWPFClient.MVVM.Command;
 using RemoteControlWPFClient.MVVM.Events;
 using RemoteControlWPFClient.MVVM.IoC;
 using RemoteControlWPFClient.MVVM.IoC.Services;
 using RemoteControlWPFClient.MVVM.Models;
+using RemoteControlWPFClient.Views.Windows;
 using RemoteControlWPFClient.Views.UserControls.Authentification;
 using System;
 using System.Threading;
@@ -43,23 +44,25 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 try
                 {
                     User user = await FileHelper.ReadUserFromFile(tokenSource.Token);
-                    byte[] serverPublicKey = await ServerAPIProvider.UserAuthorizationUseAPIAsync(user);
+                    ServerAPIProviderService serverAPIProviderService = new ServerAPIProviderService();
+                    byte[] serverPublicKey = await serverAPIProviderService.UserAuthorizationUseAPIAsync(user);
                     if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
                     {
-                        throw new NullReferenceException();
+                        //throw new NullReferenceException();
                     }
 
-                    tokenSource = new CancellationTokenSource(30000);
+                    tokenSource = new CancellationTokenSource(10000);
                     if (await client.ConnectAsync(tokenSource.Token))
                     {
                         client.SetExternalPublicKey(serverPublicKey);
                         await client.Handshake(tokenSource.Token);
-                    }
 
-                    MainWindow mainWindow = new MainWindow();
-                    window.Close();
-                    mainWindow.Show();
-                    await eventBus.Publish(new ChangeUserControlEvent(new HomeUC()));
+                        MainWindow mainWindow = new MainWindow();
+                        window.Close();
+                        mainWindow.Show();
+                        await eventBus.Publish(new ChangeUserControlEvent(new HomeUC()));
+                    }
+                    else throw new Exception();
                 }
                 catch (OperationCanceledException)
                 {

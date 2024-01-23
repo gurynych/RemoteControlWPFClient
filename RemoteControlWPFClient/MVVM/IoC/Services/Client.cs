@@ -1,8 +1,12 @@
 ﻿using NetworkMessage;
 using NetworkMessage.Commands;
-using NetworkMessage.CommandsResaults;
-using NetworkMessage.Cryptography;
+using NetworkMessage.CommandsResults;
+using NetworkMessage.Cryptography.AsymmetricCryptography;
 using NetworkMessage.Cryptography.KeyStore;
+using NetworkMessage.Cryptography.SymmetricCryptography;
+using NetworkMessage.Intents;
+using NetworkMessage.Windows;
+using RemoteControlWPFClient.BusinessLogic.Services;
 using System;
 using System.Net.Sockets;
 using System.Threading;
@@ -10,14 +14,17 @@ using System.Threading.Tasks;
 
 namespace RemoteControlWPFClient.MVVM.IoC.Services
 {
-    public class Client : TcpClientCryptoCommunicator, ISingleton
+    public class Client : TcpCommunicator, ISingleton
     {
-        public const string ServerIP = "127.0.0.1";
-        public const int ServerPort = 11000;       
+        //public const string ServerIP = "127.0.0.1";
+        public const string ServerIP = ServerAPIProviderService.ServerAddress;
+        public const int ServerPort = 11000;
         private CancellationTokenSource cancelTokenSrc;
 
-        public Client(IAsymmetricCryptographer cryptographer, AsymmetricKeyStoreBase keyStore)
-            : base(new TcpClient(), cryptographer, keyStore)
+        public Client(IAsymmetricCryptographer asymmetricCryptographer,
+            ISymmetricCryptographer symmetricCryptographer,
+            AsymmetricKeyStoreBase keyStore)
+            : base(new TcpClient(), asymmetricCryptographer, symmetricCryptographer, keyStore)
         {
             cancelTokenSrc = new CancellationTokenSource();
         }
@@ -57,7 +64,7 @@ namespace RemoteControlWPFClient.MVVM.IoC.Services
             {
                 return false;
             }
-        }        
+        }
 
         public override void Stop()
         {
@@ -73,19 +80,22 @@ namespace RemoteControlWPFClient.MVVM.IoC.Services
         /// <exception cref="ObjectDisposedException"></exception>
         public override async Task Handshake(CancellationToken token)
         {
-            //s->r->s            
             byte[] clientPublicKey = keyStore.GetPublicKey();
             PublicKeyResult publicKeyResult = new PublicKeyResult(clientPublicKey);
             await SendPublicKeyAsync(publicKeyResult, token);
+            GuidIntent guidIntent = await ReceiveIntentAsync<GuidIntent>(token);
+            if (guidIntent == null) throw new NullReferenceException(nameof(guidIntent));
 
-            INetworkObject networkObject = await ReceiveAsync(token);
-            if (networkObject is INetworkCommand command)
-            {
-                //INetworkCommandResult hwidResult = await command.Do();
-                INetworkCommandResult hwidResult = new HwidResult("A64462AFAA94750EEB90B2603B7A4067AFD8A791");
-                await SendAsync(hwidResult, token);
-            }
-            else throw new NullReferenceException(nameof(networkObject));
+            WindowsCommandFactory windowsFactory = new WindowsCommandFactory();
+            NetworkCommandBase command = guidIntent.CreateCommand(windowsFactory);
+            NetworkCommandResultBase guidResult = await command.ExecuteAsync();
+            INetworkMessage message = new NetworkMessage.NetworkMessage(guidResult);
+            await SendAsync(message, token);
+            DownloadFileIntent fileIntent = await ReceiveIntentAsync<DownloadFileIntent>(token);
+            command = fileIntent.CreateCommand(windowsFactory);
+            NetworkCommandResultBase result = await command.ExecuteAsync();
+            message = new NetworkMessage.NetworkMessage(result);
+            await SendAsync(message, token);
         }
     }
 }
