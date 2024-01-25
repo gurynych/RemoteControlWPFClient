@@ -1,90 +1,64 @@
 ﻿using NetworkMessage;
+using NetworkMessage.CommandFactory;
 using NetworkMessage.Commands;
-using NetworkMessage.CommandsResaults;
-using NetworkMessage.Cryptography;
+using NetworkMessage.CommandsResults;
+using NetworkMessage.Communicator;
+using NetworkMessage.Cryptography.AsymmetricCryptography;
 using NetworkMessage.Cryptography.KeyStore;
+using NetworkMessage.Cryptography.SymmetricCryptography;
+using NetworkMessage.Intents;
+using NetworkMessage.Windows;
+using RemoteControlWPFClient.BusinessLogic.Services;
 using System;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace RemoteControlWPFClient.MVVM.IoC.Services
 {
-    public class Client : TcpClientCryptoCommunicator, ISingleton
+    public class Client : TcpCryptoClientCommunicator, ISingleton
     {
-        public const string ServerIP = "127.0.0.1";
-        public const int ServerPort = 11000;       
-        private CancellationTokenSource cancelTokenSrc;
+        public const string ServerIP = ServerAPIProviderService.ServerAddress;
+        public const int ServerPort = 11000;
+        private ICommandFactory factory;
 
-        public Client(IAsymmetricCryptographer cryptographer, AsymmetricKeyStoreBase keyStore)
-            : base(new TcpClient(), cryptographer, keyStore)
+        public Client(IAsymmetricCryptographer asymmetricCryptographer,
+            ISymmetricCryptographer symmetricCryptographer,
+            AsymmetricKeyStoreBase keyStore,ICommandFactory commandFactory)
+            : base(new TcpClient(), asymmetricCryptographer, symmetricCryptographer, keyStore)
         {
-            cancelTokenSrc = new CancellationTokenSource();
+            this.factory = commandFactory;
         }
 
-        public bool Connect()
+        public override async Task<bool> HandshakeAsync(IProgress<long> progress = null, CancellationToken token = default)
         {
             try
             {
-                client.Connect(ServerIP, ServerPort);
-                if (client.Connected)
-                {
-                    //SendAsync()
-                }
+                BaseNetworkCommandResult result;
+                byte[] publicKey = keyStore.GetPublicKey();
+                result = new PublicKeyResult(publicKey);
+                await SendMessageAsync(result, progress, token).ConfigureAwait(false);
 
-                return true;
+                GuidIntent guidIntent = await ReceiveNetworkObjectAsync<GuidIntent>(progress, token);
+                if (guidIntent == null) throw new NullReferenceException(nameof(guidIntent));
+
+                BaseNetworkCommand command = guidIntent.CreateCommand(factory);
+                result = await command.ExecuteAsync();
+                await SendMessageAsync(result, progress, token);
+
+                SuccessfulTransferResult transferResult =
+                    await ReceiveNetworkObjectAsync<SuccessfulTransferResult>(token: token);
+                return IsConnected = transferResult.IsSuccessful;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                //logger.Log();
-                return false;
+                Debug.Write(ex.Message);
+                return IsConnected = false;
             }
-        }
 
-        public async Task<bool> ConnectAsync(CancellationToken token = default)
-        {
-            try
-            {
-                if (token != default)
-                {
-                    await client.ConnectAsync(ServerIP, ServerPort, token);
-                    return true;
-                }
-
-                return await Task.Run(Connect);
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }        
-
-        public override void Stop()
-        {
-            client.Close();
-            cancelTokenSrc.Dispose();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="token"></param>        
-        /// <exception cref="OperationCanceledException"></exception>
-        /// <exception cref="ObjectDisposedException"></exception>
-        public override async Task Handshake(CancellationToken token)
-        {
-            //s->r->s            
-            byte[] clientPublicKey = keyStore.GetPublicKey();
-            PublicKeyResult publicKeyResult = new PublicKeyResult(clientPublicKey);
-            await SendPublicKeyAsync(publicKeyResult, token);
-
-            INetworkObject networkObject = await ReceiveAsync(token);
-            if (networkObject is INetworkCommand command)
-            {
-                INetworkCommandResult hwidResult = await command.Do();
-                await SendAsync(hwidResult, token);
-            }
-            else throw new NullReferenceException(nameof(networkObject));
+           
         }
     }
+    
 }
