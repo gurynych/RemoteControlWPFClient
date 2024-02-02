@@ -8,14 +8,14 @@ using NetworkMessage.Cryptography.KeyStore;
 using NetworkMessage.Cryptography.SymmetricCryptography;
 using NetworkMessage.Intents;
 using NetworkMessage.Windows;
-using RemoteControlWPFClient.BusinessLogic.Services;
+using RemoteControlWPFClient.MVVM.IoC;
 using System;
 using System.Diagnostics;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RemoteControlWPFClient.MVVM.IoC.Services
+namespace RemoteControlWPFClient.BusinessLogic.Services
 {
     public class Client : TcpCryptoClientCommunicator, ISingleton
     {
@@ -25,10 +25,10 @@ namespace RemoteControlWPFClient.MVVM.IoC.Services
 
         public Client(IAsymmetricCryptographer asymmetricCryptographer,
             ISymmetricCryptographer symmetricCryptographer,
-            AsymmetricKeyStoreBase keyStore,ICommandFactory commandFactory)
+            AsymmetricKeyStoreBase keyStore, ICommandFactory commandFactory)
             : base(new TcpClient(), asymmetricCryptographer, symmetricCryptographer, keyStore)
         {
-            this.factory = commandFactory;
+            factory = commandFactory;
         }
 
         public override async Task<bool> HandshakeAsync(IProgress<long> progress = null, CancellationToken token = default)
@@ -38,14 +38,14 @@ namespace RemoteControlWPFClient.MVVM.IoC.Services
                 BaseNetworkCommandResult result;
                 byte[] publicKey = keyStore.GetPublicKey();
                 result = new PublicKeyResult(publicKey);
-                await SendMessageAsync(result, progress, token).ConfigureAwait(false);
+                await SendObjectAsync(result, progress, token).ConfigureAwait(false);
 
                 GuidIntent guidIntent = await ReceiveNetworkObjectAsync<GuidIntent>(progress, token);
                 if (guidIntent == null) throw new NullReferenceException(nameof(guidIntent));
 
                 BaseNetworkCommand command = guidIntent.CreateCommand(factory);
                 result = await command.ExecuteAsync();
-                await SendMessageAsync(result, progress, token);
+                await SendObjectAsync(result, progress, token);
 
                 SuccessfulTransferResult transferResult =
                     await ReceiveNetworkObjectAsync<SuccessfulTransferResult>(token: token);
@@ -57,8 +57,8 @@ namespace RemoteControlWPFClient.MVVM.IoC.Services
                 return IsConnected = false;
             }
 
-           
+
         }
     }
-    
+
 }

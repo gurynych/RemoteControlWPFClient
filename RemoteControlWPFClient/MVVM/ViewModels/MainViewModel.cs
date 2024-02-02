@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using RemoteControlWPFClient.BusinessLogic.Services;
 using RemoteControlWPFClient.MVVM.Events;
 using RemoteControlWPFClient.MVVM.IoC;
-using RemoteControlWPFClient.MVVM.IoC.Services;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 

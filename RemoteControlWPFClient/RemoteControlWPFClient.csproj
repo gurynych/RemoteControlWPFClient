@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
     <Nullable>disable</Nullable>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
@@ -20,10 +20,10 @@
 
   <ItemGroup>
     <Reference Include="NetworkMessage">
-      <HintPath>..\..\NetworkMessage.Windows\NetworkMessage.Windows\bin\Debug\net6.0-windows\NetworkMessage.dll</HintPath>
+      <HintPath>..\..\RemoteControlCommunicator\NetworkMessage\bin\Debug\net8.0\NetworkMessage.dll</HintPath>
     </Reference>
     <Reference Include="NetworkMessage.Windows">
-      <HintPath>..\..\NetworkMessage.Windows\NetworkMessage.Windows\bin\Debug\net6.0-windows\NetworkMessage.Windows.dll</HintPath>
+      <HintPath>..\..\NetworkMessage.Windows\NetworkMessage.Windows\bin\Debug\net8.0-windows7.0\NetworkMessage.Windows.dll</HintPath>
     </Reference>
   </ItemGroup>
 

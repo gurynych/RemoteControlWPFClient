@@ -7,7 +7,7 @@ using NetworkMessage.Cryptography.KeyStore;
 using NetworkMessage.Cryptography.SymmetricCryptography;
 using NetworkMessage.Windows;
 using RemoteControlWPFClient.BusinessLogic.KeyStore;
-using RemoteControlWPFClient.MVVM.IoC.Services;
+using RemoteControlWPFClient.BusinessLogic.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +27,7 @@ namespace RemoteControlWPFClient.MVVM.IoC
             {
                 Type[] interfaces = type.GetInterfaces();
                 if (interfaces.Contains(typeof(ISingleton)))
-                {                    
+                {
                     services.AddSingleton(type);
                 }
                 else if (interfaces.Contains(typeof(ITransient)))
@@ -39,8 +39,8 @@ namespace RemoteControlWPFClient.MVVM.IoC
             services.AddSingleton<IAsymmetricCryptographer, RSACryptographer>();
             services.AddSingleton<ISymmetricCryptographer, AESCryptographer>();
             services.AddSingleton<IHashCreater, BCryptCreater>();
-            services.AddTransient<ICommandFactory,WindowsCommandFactory>();
-            services.AddSingleton<TcpCryptoClientCommunicator,Client>();
+            services.AddSingleton<ICommandFactory, WindowsCommandFactory>();
+            services.AddSingleton<TcpCryptoClientCommunicator, Client>();
             services.AddSingleton<AsymmetricKeyStoreBase, ClientKeyStore>();
 
             provider = services.BuildServiceProvider();

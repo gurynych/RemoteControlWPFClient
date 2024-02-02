@@ -18,7 +18,7 @@ namespace RemoteControlWPFClient.BusinessLogic.Services
 {
     public class ServerAPIProviderService : ITransient
     {
-        public const string ServerAddress = "192.168.232.254";
+        public const string ServerAddress = "10.211.55.8";
         private const string AuthtorizeAPIUri = $"http://{ServerAddress}:5170/api/AuthentificationAPI/AuthorizeFromDevice";
         private const string RegisterAPIUri = $"http://{ServerAddress}:5170/api/AuthentificationAPI/RegisterFromDevice";
         private const string GetNestedFilesInfoInDirectoryUri = $"http://{ServerAddress}:5170/api/DeviceAPI/GetNestedFilesInfoInDirectory";

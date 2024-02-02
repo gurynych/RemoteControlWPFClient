@@ -4,7 +4,6 @@ using RemoteControlWPFClient.BusinessLogic.Services;
 using RemoteControlWPFClient.MVVM.Command;
 using RemoteControlWPFClient.MVVM.Events;
 using RemoteControlWPFClient.MVVM.IoC;
-using RemoteControlWPFClient.MVVM.IoC.Services;
 using RemoteControlWPFClient.MVVM.Models;
 using RemoteControlWPFClient.Views.Windows;
 using RemoteControlWPFClient.Views.UserControls.Authentification;
@@ -31,6 +30,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
         private readonly ServerAPIProviderService apiProvider;
         private readonly TcpCryptoClientCommunicator communicator;
         private CancellationTokenSource tokenSource;
+        private CommandsRecipientService commandsRecipientService;
 
         [ObservableProperty]
         private string actualAction;
@@ -41,12 +41,14 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
         [ObservableProperty]
         private long sendProcessProgress;
 
-        public StartupViewModel(EventBus eventBus, TcpCryptoClientCommunicator client, ICommandFactory commandFactory, ServerAPIProviderService apiProvider)
+        public StartupViewModel(EventBus eventBus, TcpCryptoClientCommunicator client, ICommandFactory commandFactory,
+            ServerAPIProviderService apiProvider, CommandsRecipientService commandsRecipientService)
         {
             this.eventBus = eventBus;
             this.communicator = client;
             factory = commandFactory;
             this.apiProvider = apiProvider;
+            this.commandsRecipientService = commandsRecipientService;
         }
 
         public ICommand StartupWindowLoaded => new AwaitableCommand(window => ConnectToServerAsync(window));
@@ -65,9 +67,11 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                     byte[] serverPublicKey = await apiProvider.UserAuthorizationUseAPIAsync(user);
                     if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
                     {
+                        MessageBox.Show("Не удалось подключиться", "Ошибка подключения", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
                         //throw new NullReferenceException();
                     }
-                    /*bool connected = await communicator.ConnectAsync(ServerAPIProviderService.ServerAddress, 11000, tokenSource.Token);
+                    bool connected = await communicator.ConnectAsync(ServerAPIProviderService.ServerAddress, 11000, tokenSource.Token);
                     if (!connected) return;
 
                     communicator.SetExternalPublicKey(serverPublicKey);
@@ -79,25 +83,21 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                         if (success)
                         {
                             user.AuthToken = serverPublicKey;
-                            tokenSource.Dispose();
                             await FileHelper.WriteUserToFile(user, tokenSource.Token);
-                            await StartListen();
+                            new Thread(StartListen) { IsBackground  = true }.Start();                           
                             MainWindow mainWindow = new MainWindow();
                             window.Close();
                             mainWindow.Show();
                             await eventBus.Publish(new ChangeUserControlEvent(new HomeUC()));
+                            tokenSource.Dispose();
                             return;
                         }
 
                         tokenSource.TryReset();
                         repeat++;
-                    }*/
-                    MainWindow mainWindow = new MainWindow();
-                    window.Close();
-                    mainWindow.Show();
-                    //ПОМЕНЯТЬ НА HOMEUC()
-                    await eventBus.Publish(new ChangeUserControlEvent(new AuthentifcationUC()));
-                    //Debug.WriteLine("Прошло 10 подключений", "Error");
+                    }
+
+                    Debug.WriteLine("Прошло 10 подключений", "Error");
                     //else throw new Exception();
                 }
                 catch (OperationCanceledException)
@@ -119,37 +119,34 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
             }
         }
 
-        private Task StartListen()
-        {
-            tokenSource = new CancellationTokenSource();
-            return Task.Run(async () =>
+        private async void StartListen()
+        {            
+            Progress<long> receiveProgress = new Progress<long>((i) => ReceiveProcessProgress = i);
+            //Progress<long> sendProgress = new Progress<long>((i) => SendProcessProgress = i);
+            Progress<long> sendProgress = new Progress<long>((i) => Debug.WriteLine(i));
+            while (true)
             {
-                Progress<long> receiveProgress = new Progress<long>((i) => ReceiveProcessProgress = i);
-                Progress<long> sendProgress = new Progress<long>((i) => SendProcessProgress = i);
-                while (!tokenSource.IsCancellationRequested)
+                try
                 {
-                    try
+                    ActualAction = "Получение намерения\n";
+                    BaseIntent intent = await communicator.ReceiveIntentAsync(receiveProgress).ConfigureAwait(false);
+                    if (intent == null)
                     {
-                        ActualAction = "Получение намерения\n";
-                        BaseIntent intent = await communicator.ReceiveIntentAsync(receiveProgress, tokenSource.Token).ConfigureAwait(false);
-                        if (intent == null)
-                        {
-                            continue;
-                        }
+                        continue;
+                    }
 
-                        ActualAction += $"Полученное намерение: {intent.IntentType}\n";
-                        ActualAction += $"Выполнение команды\n";
-                        BaseNetworkCommandResult result = await intent.CreateCommand(factory).ExecuteAsync().ConfigureAwait(false);
-                        ActualAction += "Отправка результа команды\n";
-                        await communicator.SendMessageAsync(result, sendProgress, tokenSource.Token).ConfigureAwait(false);
-                        ActualAction += "Результат отправлен";
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine(ex.Message);
-                    }
+                    ActualAction += $"Полученное намерение: {intent.IntentType}\n";
+                    ActualAction += $"Выполнение команды\n";
+                    BaseNetworkCommandResult result = await intent.CreateCommand(factory).ExecuteAsync().ConfigureAwait(false);
+                    ActualAction += "Отправка результа команды\n";
+                    await communicator.SendObjectAsync(result, sendProgress).ConfigureAwait(false);
+                    ActualAction += "Результат отправлен";
                 }
-            });
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
+            }
         }
     }
 }

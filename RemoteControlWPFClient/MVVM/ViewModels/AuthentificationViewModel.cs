@@ -5,7 +5,6 @@ using RemoteControlWPFClient.BusinessLogic.Helpers;
 using RemoteControlWPFClient.MVVM.Command;
 using RemoteControlWPFClient.MVVM.Events;
 using RemoteControlWPFClient.MVVM.IoC;
-using RemoteControlWPFClient.MVVM.IoC.Services;
 using RemoteControlWPFClient.MVVM.Models;
 using RemoteControlWPFClient.Views.UserControls.Home;
 using System;
@@ -99,6 +98,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 {
                     //throw new NullReferenceException();
                     MessageBox.Show("Неверные данные","Ошибка",MessageBoxButton.OK,MessageBoxImage.Error);
+                    return;
                 }
 
                 bool connected = await communicator.ConnectAsync(ServerAPIProviderService.ServerAddress, 11000, tokenSource.Token);
@@ -268,7 +268,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                         ActualAction += $"Выполнение команды\n";
                         BaseNetworkCommandResult result = await intent.CreateCommand(factory).ExecuteAsync().ConfigureAwait(false);
                         ActualAction += "Отправка результа команды\n";
-                        await communicator.SendMessageAsync(result, sendProgress, tokenSource.Token).ConfigureAwait(false);
+                        await communicator.SendObjectAsync(result, sendProgress, tokenSource.Token).ConfigureAwait(false);
                         ActualAction += "Результат отправлен";
                     }
                     catch (Exception ex)
