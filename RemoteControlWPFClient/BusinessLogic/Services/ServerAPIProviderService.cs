@@ -19,13 +19,14 @@ namespace RemoteControlWPFClient.BusinessLogic.Services
 {
     public class ServerAPIProviderService : ITransient
     {
-        public const string ServerAddress = "10.211.55.8";
-        private const string AuthtorizeAPIUri = $"http://{ServerAddress}:5170/api/AuthentificationAPI/AuthorizeFromDevice";
-        private const string RegisterAPIUri = $"http://{ServerAddress}:5170/api/AuthentificationAPI/RegisterFromDevice";
-        private const string AuthorizeWithTokenUri = $"http://{ServerAddress}:5170/api/AuthentificationAPI/AuthorizeFromDeviceWithToken";
-		private const string GetNestedFilesInfoInDirectoryUri = $"http://{ServerAddress}:5170/api/DeviceAPI/GetNestedFilesInfoInDirectory";
-        private const string GetConnectedDeviceUri = $"http://{ServerAddress}:5170/api/DeviceAPI/GetConnectedDevice";
-        private const string DownloadFileUri = $"http://{ServerAddress}:5170/api/DeviceAPI/DownloadFile";
+        public const string ServerAddress = "192.168.1.162";
+        public const string ServerPort = "5000";
+        private const string AuthtorizeAPIUri = $"http://{ServerAddress}:{ServerPort}/api/AuthentificationAPI/AuthorizeFromDevice";
+        private const string RegisterAPIUri = $"http://{ServerAddress}:{ServerPort}/api/AuthentificationAPI/RegisterFromDevice";
+        private const string AuthorizeWithTokenUri = $"http://{ServerAddress}:{ServerPort}/api/AuthentificationAPI/AuthorizeWithToken";
+		private const string GetNestedFilesInfoInDirectoryUri = $"http://{ServerAddress}:{ServerPort}/api/DeviceAPI/GetNestedFilesInfoInDirectory";
+        private const string GetConnectedDeviceUri = $"http://{ServerAddress}:{ServerPort}/api/DeviceAPI/GetConnectedDevice";
+        private const string DownloadFileUri = $"http://{ServerAddress}:{ServerPort}/api/DeviceAPI/DownloadFile";
         private readonly ICommandFactory factory;
 
         public ServerAPIProviderService(ICommandFactory factory)
@@ -80,7 +81,7 @@ namespace RemoteControlWPFClient.BusinessLogic.Services
             {
 				string encodedToken = WebUtility.UrlEncode(Convert.ToBase64String(userToken));
 				FormUrlEncodedContent parameters = await GetAuthWithTokenParametersAsync(encodedToken, token);
-                HttpResponseMessage response = await client.PostAsync(AuthtorizeAPIUri, parameters, token);
+                HttpResponseMessage response = await client.PostAsync(AuthorizeWithTokenUri, parameters, token);
                 if (response.IsSuccessStatusCode)
                 {
                     string responseContent = await response.Content.ReadAsStringAsync(token);

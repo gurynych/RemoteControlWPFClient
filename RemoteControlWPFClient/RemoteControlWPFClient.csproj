@@ -13,6 +13,7 @@
     <PackageReference Include="libc.hwid" Version="6.0.1" />
     <PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
     <PackageReference Include="NetworkMessage" Version="1.1.0" />
     <PackageReference Include="NetworkMessage.Windows" Version="1.1.0" />
