@@ -63,13 +63,12 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 tokenSource = new CancellationTokenSource(10000);
                 try
                 {
-                    User user = await FileHelper.ReadUserFromFile(tokenSource.Token);
-                    byte[] serverPublicKey = await apiProvider.UserAuthorizationUseAPIAsync(user);
+                    byte[] userToken = await FileHelper.ReadUserTokenFromFile(tokenSource.Token);
+                    byte[] serverPublicKey = await apiProvider.UserAuthorizationWithTokenUseAPIAsync(userToken,tokenSource.Token);
                     if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
                     {
                         MessageBox.Show("Не удалось подключиться", "Ошибка подключения", MessageBoxButton.OK, MessageBoxImage.Error);
-                        return;
-                        //throw new NullReferenceException();
+                        throw new Exception();
                     }
                     bool connected = await communicator.ConnectAsync(ServerAPIProviderService.ServerAddress, 11000, tokenSource.Token);
                     if (!connected) return;
@@ -82,8 +81,6 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                         bool success = await communicator.HandshakeAsync(token: tokenSource.Token);
                         if (success)
                         {
-                            user.AuthToken = serverPublicKey;
-                            await FileHelper.WriteUserToFile(user, tokenSource.Token);
                             new Thread(StartListen) { IsBackground  = true }.Start();                           
                             MainWindow mainWindow = new MainWindow();
                             window.Close();
@@ -129,7 +126,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 try
                 {
                     ActualAction = "Получение намерения\n";
-                    BaseIntent intent = await communicator.ReceiveIntentAsync(receiveProgress).ConfigureAwait(false);
+                    BaseIntent intent = await communicator.ReceiveAsync(receiveProgress).ConfigureAwait(false);
                     if (intent == null)
                     {
                         continue;

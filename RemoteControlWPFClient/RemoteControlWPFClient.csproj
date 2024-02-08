@@ -14,17 +14,10 @@
     <PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
+    <PackageReference Include="NetworkMessage" Version="1.1.0" />
+    <PackageReference Include="NetworkMessage.Windows" Version="1.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	<FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="NetworkMessage">
-      <HintPath>..\..\RemoteControlCommunicator\NetworkMessage\bin\Debug\net8.0\NetworkMessage.dll</HintPath>
-    </Reference>
-    <Reference Include="NetworkMessage.Windows">
-      <HintPath>..\..\NetworkMessage.Windows\NetworkMessage.Windows\bin\Debug\net8.0-windows7.0\NetworkMessage.Windows.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

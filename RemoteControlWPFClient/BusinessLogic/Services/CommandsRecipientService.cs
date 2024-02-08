@@ -47,7 +47,7 @@ namespace RemoteControlWPFClient.BusinessLogic.Services
             {
                 try
                 {                   
-                    BaseIntent intent = await communicator.ReceiveIntentAsync().ConfigureAwait(false);
+                    BaseIntent intent = await communicator.ReceiveAsync().ConfigureAwait(false);
                     if (intent == null)
                     {
                         continue;

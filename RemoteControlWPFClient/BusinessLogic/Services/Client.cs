@@ -1,13 +1,13 @@
-﻿using NetworkMessage;
+﻿
 using NetworkMessage.CommandFactory;
 using NetworkMessage.Commands;
 using NetworkMessage.CommandsResults;
+using NetworkMessage.CommandsResults.ConcreteCommandResults;
 using NetworkMessage.Communicator;
 using NetworkMessage.Cryptography.AsymmetricCryptography;
 using NetworkMessage.Cryptography.KeyStore;
 using NetworkMessage.Cryptography.SymmetricCryptography;
-using NetworkMessage.Intents;
-using NetworkMessage.Windows;
+using NetworkMessage.Intents.ConcreteIntents;
 using RemoteControlWPFClient.MVVM.IoC;
 using System;
 using System.Diagnostics;
@@ -40,15 +40,15 @@ namespace RemoteControlWPFClient.BusinessLogic.Services
                 result = new PublicKeyResult(publicKey);
                 await SendObjectAsync(result, progress, token).ConfigureAwait(false);
 
-                GuidIntent guidIntent = await ReceiveNetworkObjectAsync<GuidIntent>(progress, token);
+                GuidIntent guidIntent = await ReceiveAsync<GuidIntent>(progress, token);
                 if (guidIntent == null) throw new NullReferenceException(nameof(guidIntent));
 
-                BaseNetworkCommand command = guidIntent.CreateCommand(factory);
+                INetworkCommand command = guidIntent.CreateCommand(factory);
                 result = await command.ExecuteAsync();
                 await SendObjectAsync(result, progress, token);
 
                 SuccessfulTransferResult transferResult =
-                    await ReceiveNetworkObjectAsync<SuccessfulTransferResult>(token: token);
+                    await ReceiveAsync<SuccessfulTransferResult>(token: token);
                 return IsConnected = transferResult.IsSuccessful;
             }
             catch (Exception ex)

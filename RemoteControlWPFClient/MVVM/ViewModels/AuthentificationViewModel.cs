@@ -93,7 +93,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
             {
                 User user = new User(AuthEmail, AuthPassword);
                 tokenSource = new CancellationTokenSource(20000);
-                byte[] serverPublicKey = await apiProvider.UserAuthorizationUseAPIAsync(user, tokenSource.Token);
+				byte[] serverPublicKey = await apiProvider.UserAuthorizationUseAPIAsync(user, tokenSource.Token);
                 if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
                 {
                     //throw new NullReferenceException();
@@ -114,7 +114,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                     {
                         user.AuthToken = serverPublicKey;
                         tokenSource.Dispose();
-                        await FileHelper.WriteUserToFile(user, tokenSource.Token);
+                        await FileHelper.WriteUserTokenToFile(user.AuthToken, tokenSource.Token);
                         await StartListen();
                         await eventBus.Publish(new ChangeUserControlEvent(new HomeUC()));
                         return;
@@ -177,6 +177,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
                 {
                     MessageBox.Show("Неверные данные", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
                     //throw new NullReferenceException();
                 }
 
@@ -193,7 +194,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                     {
                         user.AuthToken = serverPublicKey;
                         tokenSource.Dispose();
-                        await FileHelper.WriteUserToFile(user, tokenSource.Token);
+                        await FileHelper.WriteUserTokenToFile(user.AuthToken, tokenSource.Token);
                         await StartListen();
                         await eventBus.Publish(new ChangeUserControlEvent(new HomeUC()));
                         return;
@@ -258,7 +259,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                     try
                     {
                         ActualAction = "Получение намерения\n";
-                        BaseIntent intent = await communicator.ReceiveIntentAsync(receiveProgress, tokenSource.Token).ConfigureAwait(false);
+                        BaseIntent intent = await communicator.ReceiveAsync(receiveProgress, tokenSource.Token).ConfigureAwait(false);
                         if (intent == null)
                         {
                             continue;
