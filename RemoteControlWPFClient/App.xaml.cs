@@ -1,5 +1,7 @@
 ﻿using Microsoft.Win32;
 using RemoteControlWPFClient.MVVM.IoC;
+using System;
+using System.IO;
 using System.Windows;
 
 namespace RemoteControlWPFClient
@@ -19,9 +21,11 @@ namespace RemoteControlWPFClient
         private void AutoStart()
         {
 			RegistryKey registryKey = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+            string directory = Directory.GetCurrentDirectory();
+			string path = directory.Substring(0,directory.Length)+"\\"+ System.Reflection.Assembly.GetExecutingAssembly().GetName().Name+".exe";
 			if (registryKey.GetValue("RemoteControlWPFClient") == null)
 			{
-				registryKey.SetValue("RemoteControlWPFClient", System.Reflection.Assembly.GetExecutingAssembly().Location);
+				registryKey.SetValue("RemoteControlWPFClient", path);
 			}
 		}
     }

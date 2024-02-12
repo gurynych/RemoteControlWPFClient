@@ -9,16 +9,24 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="ComputerInfo" Version="0.2.0" />
     <PackageReference Include="DevExpressMvvm" Version="22.1.3" />
     <PackageReference Include="libc.hwid" Version="6.0.1" />
     <PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
-    <PackageReference Include="NetworkMessage" Version="1.1.0" />
-    <PackageReference Include="NetworkMessage.Windows" Version="1.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	<FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="NetworkMessage">
+      <HintPath>..\..\RemoteControlCommunicator\NetworkMessage\bin\Debug\net8.0\NetworkMessage.dll</HintPath>
+    </Reference>
+    <Reference Include="NetworkMessage.Windows">
+      <HintPath>..\..\NetworkMessage.Windows\NetworkMessage.Windows\obj\Debug\net8.0-windows7.0\NetworkMessage.Windows.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

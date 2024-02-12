@@ -12,6 +12,7 @@ namespace RemoteControlWPFClient.MVVM.IoC
 
         public HomeViewModel HomeViewModel => IoC.GetRequiredService<HomeViewModel>(); 
 
+        public DevicesViewModel DevicesViewModel => IoC.GetRequiredService<DevicesViewModel>();
         //public static ITcpClientService TcpClientService => IoC.GetRequiredService<TcpClientService>();
     }
 }

@@ -42,6 +42,8 @@ namespace RemoteControlWPFClient.MVVM.IoC
             services.AddSingleton<ICommandFactory, WindowsCommandFactory>();
             services.AddSingleton<TcpCryptoClientCommunicator, Client>();
             services.AddSingleton<AsymmetricKeyStoreBase, ClientKeyStore>();
+            services.AddSingleton<CommandsRecipientService>();
+            services.AddSingleton<CurrentUserServices>();
 
             provider = services.BuildServiceProvider();
 

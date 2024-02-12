@@ -11,15 +11,18 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
     {
         private readonly Client client;
         private readonly EventBus eventBus;
-
-        [ObservableProperty]
+        private readonly CommandsRecipientService commandsRecipient;
+		private readonly CurrentUserServices currentUser;
+		[ObservableProperty]
         private UserControl userControl;
 
-        public MainViewModel(Client client, EventBus eventBus)
+        public MainViewModel(Client client, EventBus eventBus, CommandsRecipientService commandsRecipient,CurrentUserServices currentUser)
         {
             this.client = client;
             this.eventBus = eventBus;
-            eventBus?.Subscribe<ChangeUserControlEvent>(@event => ChangeUserControl(@event.UserControl));
+            this.commandsRecipient = commandsRecipient;
+			this.currentUser = currentUser;
+			eventBus?.Subscribe<ChangeUserControlEvent>(@event => ChangeUserControl(@event.UserControl));
         }
 
         /// <summary>
@@ -31,5 +34,6 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
             UserControl = newUserControl;
             return Task.CompletedTask;
         }
+
     }
 }

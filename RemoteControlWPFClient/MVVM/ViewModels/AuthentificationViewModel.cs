@@ -31,7 +31,8 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
         private readonly EventBus eventBus;
         private readonly ICommandFactory factory;
         private readonly ServerAPIProviderService apiProvider;
-        private readonly TcpCryptoClientCommunicator communicator;
+		private readonly CurrentUserServices currentUser;
+		private readonly TcpCryptoClientCommunicator communicator;
         private CancellationTokenSource tokenSource;
 
         [ObservableProperty]
@@ -76,12 +77,14 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
 
         public ICommand RegistrationCommand => new AwaitableCommand(RegisterWithConnectToServer, obj => !HasErrors);
 
-        public AuthentificationViewModel(EventBus eventBus, TcpCryptoClientCommunicator client, ICommandFactory commandFactory, ServerAPIProviderService apiProvider)
+        public AuthentificationViewModel(EventBus eventBus, TcpCryptoClientCommunicator client, ICommandFactory commandFactory, ServerAPIProviderService apiProvider,
+            CurrentUserServices currentUser)
         {
             this.eventBus = eventBus;
             this.communicator = client;
             factory = commandFactory;
             this.apiProvider = apiProvider;
+			this.currentUser = currentUser;
         }
 
         /// <summary>
@@ -94,7 +97,8 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 User user = new User(AuthEmail, AuthPassword);
                 tokenSource = new CancellationTokenSource(20000);
 				byte[] serverPublicKey = await apiProvider.UserAuthorizationUseAPIAsync(user, tokenSource.Token);
-                if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
+				await FileHelper.WriteUserTokenToFile(serverPublicKey, tokenSource.Token);
+				if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
                 {
                     //throw new NullReferenceException();
                     MessageBox.Show("Неверные данные","Ошибка",MessageBoxButton.OK,MessageBoxImage.Error);
@@ -113,11 +117,11 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                     if (success)
                     {
                         user.AuthToken = serverPublicKey;
-                        tokenSource.Dispose();
-                        await FileHelper.WriteUserTokenToFile(user.AuthToken, tokenSource.Token);
-                        await StartListen();
-                        await eventBus.Publish(new ChangeUserControlEvent(new HomeUC()));
-                        return;
+                        currentUser.Enter(user);
+						currentUser.SetDevices(await apiProvider.GetConnectedDeviceAsync(user));
+						await eventBus.Publish(new ChangeUserControlEvent(new HomeUC()));
+						tokenSource.Dispose();
+						return;
                     }
 
                     tokenSource.TryReset();
@@ -193,11 +197,12 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                     if (success)
                     {
                         user.AuthToken = serverPublicKey;
-                        tokenSource.Dispose();
+                        currentUser.Enter(user);
+                        currentUser.SetDevices(await apiProvider.GetConnectedDeviceAsync(user));
                         await FileHelper.WriteUserTokenToFile(user.AuthToken, tokenSource.Token);
-                        await StartListen();
                         await eventBus.Publish(new ChangeUserControlEvent(new HomeUC()));
-                        return;
+						tokenSource.Dispose();
+						return;
                     }
 
                     tokenSource.TryReset();
@@ -247,37 +252,6 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 Debug.WriteLine(ex.Message, "Error");
             }
         }
-        private Task StartListen()
-        {
-            tokenSource = new CancellationTokenSource();
-            return Task.Run(async () =>
-            {
-                Progress<long> receiveProgress = new Progress<long>((i) => ReceiveProcessProgress = i);
-                Progress<long> sendProgress = new Progress<long>((i) => SendProcessProgress = i);
-                while (!tokenSource.IsCancellationRequested)
-                {
-                    try
-                    {
-                        ActualAction = "Получение намерения\n";
-                        BaseIntent intent = await communicator.ReceiveAsync(receiveProgress, tokenSource.Token).ConfigureAwait(false);
-                        if (intent == null)
-                        {
-                            continue;
-                        }
-
-                        ActualAction += $"Полученное намерение: {intent.IntentType}\n";
-                        ActualAction += $"Выполнение команды\n";
-                        BaseNetworkCommandResult result = await intent.CreateCommand(factory).ExecuteAsync().ConfigureAwait(false);
-                        ActualAction += "Отправка результа команды\n";
-                        await communicator.SendObjectAsync(result, sendProgress, tokenSource.Token).ConfigureAwait(false);
-                        ActualAction += "Результат отправлен";
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine(ex.Message);
-                    }
-                }
-            });
-        }
+        
     }
 }
