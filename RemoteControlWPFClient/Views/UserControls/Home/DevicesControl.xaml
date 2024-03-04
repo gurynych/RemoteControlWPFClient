@@ -8,31 +8,33 @@
              mc:Ignorable="d"
              d:DesignHeight="450"
              d:DesignWidth="800"
-             TextElement.Foreground="{DynamicResource PrimaryHueForegroundBrush }"             
+             TextElement.Foreground="{DynamicResource PrimaryHueForegroundBrush }"
              DataContext="{Binding DevicesViewModel, Source={StaticResource vmLocator}}">
-    <UniformGrid Columns="1"
-                 Rows="{Binding ConnectedDevices.Count}">
-        <ItemsControl ItemsSource="{Binding ConnectedDevices}">
-            <DataTemplate>
-                <md:Card UniformCornerRadius="10"
-                         HorizontalAlignment="Stretch"
-                         Margin="5">
-                    <UniformGrid Columns="3">
-                        <TextBlock Text="{Binding DeviceName}" />
-                        <Border Height="0.1"
-                                HorizontalAlignment="Stretch" />
-                        <TextBlock>
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}{0} {1} {2}">
-                                    <Binding Path="DeviceManufacturer" />
-                                    <Binding Path="DevicePlatform" />
-                                    <Binding Path="DevicePlatformVersion" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
-                    </UniformGrid>
-                </md:Card>
-            </DataTemplate>
-        </ItemsControl>
-    </UniformGrid>
+    <ScrollViewer>
+        <UniformGrid Columns="1"
+                     Rows="{Binding ConnectedDevices.Count}">
+            <ItemsControl ItemsSource="{Binding ConnectedDevices}">
+                <DataTemplate>
+                    <md:Card UniformCornerRadius="10"
+                             HorizontalAlignment="Stretch"
+                             Margin="5">
+                        <UniformGrid Columns="3">
+                            <TextBlock Text="{Binding DeviceName}" />
+                            <Border Height="0.1"
+                                    HorizontalAlignment="Stretch" />
+                            <TextBlock>
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0} {1} {2}">
+                                        <Binding Path="DeviceManufacturer" />
+                                        <Binding Path="DevicePlatform" />
+                                        <Binding Path="DevicePlatformVersion" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </UniformGrid>
+                    </md:Card>
+                </DataTemplate>
+            </ItemsControl>
+        </UniformGrid>
+    </ScrollViewer>
 </UserControl>

@@ -61,20 +61,24 @@
                                FontSize="20">
 
                     </TextBlock>
-                    <Image Source="C:\Users\kseniagrafova\source\repos\RemoteControlWPFClient\RemoteControlWPFClient\images\geometry_auth.png"
+                    <Image Source="\images\geometry_auth.png"
                            Width="180">
 
                     </Image>
                     <Button Content="Отключится"
-                            Background="#2D2E31"
+                            Background="#212529"
+                            BorderBrush="#212529"
                             Command="{Binding DisconnectCommand}"
                             Margin="10" />
                     <Button Content="Переподключится"
-                            Background="#2D2E31"
+                            Background="#212529"
+                            BorderBrush="#212529"
                             Command="{Binding ReconnectCommand}"
                             Margin="10" />
                     <Button Content="Устройства"
-                            Background="#2D2E31"
+                            Background="#212529"
+                            BorderBrush="#212529"
+                            Command="{Binding OpenDevicesCommand}"
                             Margin="10" />
                 </StackPanel>
             </md:Card >

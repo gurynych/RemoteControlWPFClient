@@ -65,7 +65,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 tokenSource = new CancellationTokenSource(10000);
                 try
                 {
-                    byte[] userToken = await FileHelper.ReadUserTokenFromFile(tokenSource.Token);
+                    byte[] userToken = await FileHelper.ReadUserTokenFromFileAsync(tokenSource.Token);
                     byte[] serverPublicKey = await apiProvider.UserAuthorizationWithTokenUseAPIAsync(userToken,tokenSource.Token);
 
                     //доделать метод api

@@ -21,10 +21,9 @@ namespace RemoteControlWPFClient.BusinessLogic.Helpers
         /// </summary>                
         /// <exception cref="FileNotFoundException"/>
         /// <exception cref="OperationCanceledException"/>        
-        public static async Task<byte[]> ReadUserTokenFromFile(CancellationToken token)
-        {                     
-            byte[] userToken = await File.ReadAllBytesAsync(userDataPath, token);
-            return userToken;          
+        public static async Task<byte[]> ReadUserTokenFromFileAsync(CancellationToken token = default)
+        {
+			return await File.ReadAllBytesAsync(userDataPath, token).ConfigureAwait(false);        
         }
 
         /// <summary>
@@ -32,9 +31,9 @@ namespace RemoteControlWPFClient.BusinessLogic.Helpers
         /// </summary>
         /// <param name="user">Текущий пользователь</param>               
         /// <exception cref="OperationCanceledException"/>
-        public static async Task WriteUserTokenToFile(byte[] userToken, CancellationToken token)
+        public static async Task WriteUserTokenToFileAsync(byte[] userToken, CancellationToken token = default)
         {        
-            await File.WriteAllBytesAsync(userDataPath, userToken, token);                       
+            await File.WriteAllBytesAsync(userDataPath, userToken, token).ConfigureAwait(false);                       
         }
 
     }

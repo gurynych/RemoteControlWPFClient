@@ -1,6 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using NetworkMessage.CommandFactory;
 using NetworkMessage.Communicator;
+using RemoteControlServer.BusinessLogic.Database.Models;
+using RemoteControlWPFClient.BusinessLogic.Helpers;
 using RemoteControlWPFClient.BusinessLogic.Services;
 using RemoteControlWPFClient.MVVM.Command;
 using RemoteControlWPFClient.MVVM.Events;
@@ -79,11 +81,12 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
 			}
 		}
 
-		private ICommand OpenDevices => new RelayCommand(async () =>
+		public ICommand OpenDevicesCommand => new RelayCommand(async () =>
 		{
-			CancellationTokenSource tokenSource = new CancellationTokenSource(15000);
-			await apiProvider.GetConnectedDeviceAsync(User, tokenSource.Token).ConfigureAwait(false);
-			await eventBus.Publish(new ChangeUserControlEvent(new DevicesControl()));
+			CancellationTokenSource tokenSource = new CancellationTokenSource(150000);
+			User.AuthToken = await FileHelper.ReadUserTokenFromFileAsync(tokenSource.Token).ConfigureAwait(false);
+			List<Device> devices = await apiProvider.GetConnectedDeviceAsync(User, tokenSource.Token).ConfigureAwait(false);
+			//await eventBus.Publish(new ChangeUserControlEvent(new DevicesControl()));
 		});
 	}
 }

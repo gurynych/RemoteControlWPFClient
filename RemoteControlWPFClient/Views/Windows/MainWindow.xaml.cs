@@ -13,13 +13,19 @@ namespace RemoteControlWPFClient.Views.Windows
         {
             InitializeComponent();
             System.Windows.Forms.NotifyIcon ni = new System.Windows.Forms.NotifyIcon();
+            ni.Text = "RemoteControl";
             ni.Icon = new System.Drawing.Icon("Main.ico");
-            ni.Visible = true;
-            ni.Click +=
+            ni.Visible = true;          
+            ni.DoubleClick +=
+				delegate (object sender, EventArgs args)
+				{
+					App.Current.Shutdown();
+				};
+			ni.Click +=
                 delegate (object sender, EventArgs args)
                 {
-                    this.Show();
-                    this.WindowState = WindowState.Normal;
+					Show();
+					WindowState = WindowState.Normal;
                 };
         }
 

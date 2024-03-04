@@ -30,9 +30,9 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
 		[ObservableProperty]
 		private ObservableCollection<Device> connectedDevices;
 
-		public DevicesViewModel(ServerAPIProviderService apiProvider, CurrentUserServices currentUser,EventBus eventBus)
+		public DevicesViewModel(ServerAPIProviderService apiProvider, CurrentUserServices currentUser, EventBus eventBus)
 		{
-			this.apiProvider = apiProvider;		
+			this.apiProvider = apiProvider;
 			this.eventBus = eventBus;
 		}
 

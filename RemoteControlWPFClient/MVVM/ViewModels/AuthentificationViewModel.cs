@@ -97,7 +97,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                 User user = new User(AuthEmail, AuthPassword);
                 tokenSource = new CancellationTokenSource(20000);
 				byte[] serverPublicKey = await apiProvider.UserAuthorizationUseAPIAsync(user, tokenSource.Token);
-				await FileHelper.WriteUserTokenToFile(serverPublicKey, tokenSource.Token);
+				await FileHelper.WriteUserTokenToFileAsync(serverPublicKey, tokenSource.Token);
 				if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
                 {
                     //throw new NullReferenceException();
@@ -199,7 +199,7 @@ namespace RemoteControlWPFClient.MVVM.ViewModels
                         user.AuthToken = serverPublicKey;
                         currentUser.Enter(user);
                         currentUser.SetDevices(await apiProvider.GetConnectedDeviceAsync(user));
-                        await FileHelper.WriteUserTokenToFile(user.AuthToken, tokenSource.Token);
+                        await FileHelper.WriteUserTokenToFileAsync(user.AuthToken, tokenSource.Token);
                         await eventBus.Publish(new ChangeUserControlEvent(new HomeUC()));
 						tokenSource.Dispose();
 						return;

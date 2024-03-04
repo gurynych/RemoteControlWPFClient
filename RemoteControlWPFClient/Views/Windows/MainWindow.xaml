@@ -11,10 +11,7 @@
         Height="600"
         Width="800"
         DataContext="{Binding MainViewModel, Source={StaticResource vmLocator}}">
-    <Grid Background="#2D2E31">
-     
-        <ContentControl Content="{Binding UserControl}">
-
-        </ContentControl>
+    <Grid Background="#212529">
+        <ContentControl Content="{Binding UserControl}" />
     </Grid>
 </Window>
