@@ -10,23 +10,83 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="ComputerInfo" Version="0.2.0" />
-    <PackageReference Include="DevExpressMvvm" Version="22.1.3" />
-    <PackageReference Include="libc.hwid" Version="6.0.1" />
-    <PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+    <PackageReference Include="DevExpressMvvm" Version="23.2.3" />
+    <PackageReference Include="libc.hwid" Version="6.0.2" />
+    <PackageReference Include="MaterialDesignThemes" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	<FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
+	<PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="NetworkMessage">
-      <HintPath>..\..\RemoteControlCommunicator\NetworkMessage\bin\Debug\net8.0\NetworkMessage.dll</HintPath>
+      <HintPath>..\..\NetworkMessage\NetworkMessage\bin\Debug\net8.0\NetworkMessage.dll</HintPath>
     </Reference>
     <Reference Include="NetworkMessage.Windows">
-      <HintPath>..\..\NetworkMessage.Windows\NetworkMessage.Windows\obj\Debug\net8.0-windows7.0\NetworkMessage.Windows.dll</HintPath>
+      <HintPath>..\..\NetworkMessage.Windows\NetworkMessage.Windows\bin\Debug\net8.0-windows7.0\NetworkMessage.Windows.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Main.ico" />
+    <Resource Include="Resources\Main.ico" />
+    <None Remove="Resources\phone.svg" />
+    <None Remove="Resources\desktop.svg" />
+    <None Remove="Resources\unknown.svg" />
+    <None Remove="Resources\pc.svg" />
+    <Resource Include="Resources\pc.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Icons.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Icons.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources\Icons.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Icons.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\phone.svg" />
+    <Resource Include="Resources\unknown.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="WpfLayer\Views\UserControls\Authentification\AuthentifcationUC.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="WpfLayer\Views\UserControls\Authentification\AuthorizationUC.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="WpfLayer\Views\UserControls\Authentification\RegistrationUC.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="WpfLayer\Views\UserControls\Home\HomeUC.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="WpfLayer\Views\UserControls\Device\DeviceInfoUC.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="WpfLayer\Views\Windows\MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="WpfLayer\Views\Windows\StartupWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="WpfLayer\Views\UserControls\Device\DevicesUC.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>Wpf</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,32 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <ResourceDictionary.MergedDictionaries>
+        <md:BundledTheme BaseTheme="Light"
+                         PrimaryColor="DeepPurple"
+                         SecondaryColor="Lime" />
+        <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
+
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/MaterialDesignColor.DeepPurple.Primary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            
+            <SolidColorBrush x:Key="MaterialDesign.Brush.Primary.Light" Color="#303030" />
+            <SolidColorBrush x:Key="MaterialDesign.Brush.Primary" Color="#212529" />
+            <SolidColorBrush x:Key="MaterialDesign.Brush.Primary.Dark" Color="#000" />
+            <SolidColorBrush x:Key="MaterialDesign.Brush.Primary.Foreground" Color="#eee"/>
+        </ResourceDictionary>
+
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/MaterialDesignColor.Lime.Secondary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            
+            <SolidColorBrush x:Key="MaterialDesign.Brush.Secondary.Light" Color="#fff"/>
+            <SolidColorBrush x:Key="MaterialDesign.Brush.Secondary" Color="#eee"/>
+            <SolidColorBrush x:Key="MaterialDesign.Brush.Secondary.Dark" Color="#ddd"/>
+            <SolidColorBrush x:Key="MaterialDesign.Brush.Secondary.Foreground" Color="#eee"/>
+        </ResourceDictionary>
+    </ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>

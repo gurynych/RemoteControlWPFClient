@@ -1,0 +1,44 @@
+﻿<Window x:Class="RemoteControlWPFClient.WpfLayer.Views.Windows.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:tb="http://www.hardcodet.net/taskbar"
+        xmlns:vm="clr-namespace:RemoteControlWPFClient.WpfLayer.ViewModels"
+        xmlns:local="clr-namespace:RemoteControlWPFClient.WpfLayer.Views.Windows"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        Height="600"
+        Width="800"
+        Style="{StaticResource MaterialDesignWindow}"
+        FontSize="18"
+        d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=False}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <Grid Grid.Row="0" Visibility="{Binding MenuVisibility}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Menu Grid.Column="0">
+                <MenuItem Header="RemoteControl" FontWeight="Bold" />
+                <MenuItem Header="Главная"
+                          Command="{Binding OpenMainControlCommand}"/>
+            </Menu>
+            
+            <Menu Grid.Column="1"
+                  HorizontalAlignment="Right">
+                <MenuItem Header="{Binding UserLogin}"/>
+            </Menu>
+        </Grid>
+     
+        <ContentControl Grid.Row="1" 
+            Content="{Binding UserControl}">
+        </ContentControl>
+    </Grid>
+</Window>

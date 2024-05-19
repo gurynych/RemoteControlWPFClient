@@ -1,0 +1,50 @@
+﻿<UserControl x:Class="RemoteControlWPFClient.WpfLayer.Views.UserControls.Home.HomeUC"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:RemoteControlWPFClient.WpfLayer.ViewModels"
+             xmlns:local="clr-namespace:RemoteControlWPFClient.WpfLayer.Views.UserControls.Home"
+             mc:Ignorable="d"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             d:DesignHeight="450" d:DesignWidth="800"
+             d:DataContext="{d:DesignInstance vm:HomeViewModel, IsDesignTimeCreatable=False}">
+    <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <md:Card Height="350"
+                     Width="300"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"
+                     UniformCornerRadius="10"
+                     BorderThickness="1"
+                     BorderBrush="Black"
+                     Padding="10"
+                     md:ElevationAssist.Elevation="Dp16">
+                <StackPanel Orientation="Vertical"
+                            VerticalAlignment="Bottom">
+                    <TextBlock Text="{Binding UserDto.Login}"
+                               FontWeight="Bold"
+                               TextAlignment="Center"
+                               FontSize="20">
+
+                    </TextBlock>
+                    <Image Source="C:\Users\kseniagrafova\source\repos\RemoteControlWPFClient\RemoteControlWPFClient\images\geometry_auth.png"
+                           Width="180">
+
+                    </Image>
+                    <Button Content="Отключится"
+                            Margin="10" 
+                            Command="{Binding DisconnectCommand}"/>
+                    <Button Content="Переподключится"
+                            Margin="10" 
+                            Command="{Binding ReconnectCommand}"/>
+                    <Button Content="Устройства"
+                            Margin="10" 
+                            Command="{Binding OpenDevices}"/>
+                </StackPanel>
+            </md:Card >
+        </Grid>
+</UserControl>

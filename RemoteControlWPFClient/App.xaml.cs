@@ -1,8 +1,12 @@
 ﻿using Microsoft.Win32;
-using RemoteControlWPFClient.MVVM.IoC;
+using RemoteControlWPFClient.WpfLayer.IoC;
 using System;
 using System.IO;
+using System.Reflection;
 using System.Windows;
+using System.Windows.Controls;
+using RemoteControlWPFClient.WpfLayer.Views.Windows;
+using RemoteControlWPFClient.WpfLayer.ViewModels;
 
 namespace RemoteControlWPFClient
 {
@@ -13,20 +17,42 @@ namespace RemoteControlWPFClient
     {
         protected override void OnStartup(StartupEventArgs e)
         {
-            IoC.Init();
-            base.OnStartup(e);
-            AutoStart();
-		}
+            try
+            {
+                AutoStart();
+                IoCContainer.Init();
+                base.OnStartup(e);
+                IoCContainer.OpenViewModel<StartupViewModel, StartupWindow>().Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка.\n{ex.Message}\n{ex.StackTrace}", "Ошибка", MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
 
+        public string ApplicationName => "g-eye";
+        
+        public ResourceDictionary ThemeDictionary => Resources.MergedDictionaries[0];
+        
+        public void ChangeTheme(Uri uri)
+        {
+            ThemeDictionary.MergedDictionaries.Clear();
+            ThemeDictionary.MergedDictionaries.Add(new ResourceDictionary() { Source = uri });
+        } 
+        
         private void AutoStart()
         {
-			RegistryKey registryKey = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+            RegistryKey registryKey =
+                Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
             string directory = Directory.GetCurrentDirectory();
-			string path = directory.Substring(0,directory.Length)+"\\"+ System.Reflection.Assembly.GetExecutingAssembly().GetName().Name+".exe";
-			if (registryKey.GetValue("RemoteControlWPFClient") == null)
-			{
-				registryKey.SetValue("RemoteControlWPFClient", path);
-			}
-		}
+            string assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
+            string path = Path.Combine(directory, assemblyName + ".exe");
+            
+            if (registryKey.GetValue(ApplicationName) == null)
+            {
+                registryKey.SetValue(ApplicationName, path);
+            }
+        }
     }
 }

@@ -1,0 +1,30 @@
+﻿<Window x:Class="RemoteControlWPFClient.WpfLayer.Views.Windows.StartupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+        xmlns:vm="clr-namespace:RemoteControlWPFClient.WpfLayer.ViewModels"
+        xmlns:local="clr-namespace:RemoteControlWPFClient.WpfLayer.Views.Windows"
+        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        Height="200" Width="200" 
+        x:Name="StartupWin"
+        Style="{StaticResource MaterialDesignWindow}"
+        d:DataContext="{d:DesignInstance vm:StartupViewModel, IsDesignTimeCreatable=False}">
+    <dxmvvm:Interaction.Behaviors>
+        <dxmvvm:EventToCommand EventName="Loaded"
+                               Command="{Binding StartupWindowLoaded}"
+                               CommandParameter="{x:Reference Name=StartupWin}"/>
+    </dxmvvm:Interaction.Behaviors>
+    <Grid>
+        <ProgressBar IsIndeterminate="True"
+                     Height="40"
+                     Width="40"
+                     Style="{StaticResource MaterialDesignCircularProgressBar}"
+                     Value="0" />
+    </Grid>
+</Window>
