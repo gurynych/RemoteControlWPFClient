@@ -20,11 +20,12 @@
                                Command="{Binding StartupWindowLoaded}"
                                CommandParameter="{x:Reference Name=StartupWin}"/>
     </dxmvvm:Interaction.Behaviors>
-    <Grid>
+    <Grid Background="#212529">
         <ProgressBar IsIndeterminate="True"
                      Height="40"
                      Width="40"
                      Style="{StaticResource MaterialDesignCircularProgressBar}"
-                     Value="0" />
+                     Value="0" 
+                     Foreground="White"/>
     </Grid>
 </Window>
