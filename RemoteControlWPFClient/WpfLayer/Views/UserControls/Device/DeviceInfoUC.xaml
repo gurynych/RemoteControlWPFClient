@@ -8,7 +8,8 @@
              xmlns:vm="clr-namespace:RemoteControlWPFClient.WpfLayer.ViewModels"
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="600"
-             d:DataContext="{d:DesignInstance vm:DeviceInfoViewModel, IsDesignTimeCreatable=False}">
+             d:DataContext="{d:DesignInstance vm:DeviceInfoViewModel, IsDesignTimeCreatable=False}"
+             FontSize="16">
     <UserControl.Resources>
         <Style TargetType="{x:Type ProgressBar}">
             <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Primary}" />
@@ -32,6 +33,10 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+        <Style TargetType="{x:Type TextBlock}">
+            <Setter Property="TextWrapping"
+                    Value="Wrap" />
         </Style>
     </UserControl.Resources>
     <Grid Margin="10">
@@ -65,16 +70,18 @@
                             Orientation="Vertical"
                             Margin="7 0 0 0"
                             Grid.Column="1">
-                    <TextBlock Text="fsdfds"
+                    <TextBlock Text="{Binding Device.DeviceName}"
                                TextWrapping="Wrap"
                                FontWeight="Bold"
-                               FontSize="24"
+                               FontSize="20"
                                VerticalAlignment="Center"
                                Margin="0 0 0 5" />
                     <TextBlock Margin="0 7"
                                VerticalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="TextWrapping"
+                                        Value="Wrap" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding Device.IsConnected}"
                                                  Value="True">
@@ -90,23 +97,32 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center"
-                                Margin="0 5">
+                    <Grid VerticalAlignment="Center"
+                          Margin="0 5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
                         <md:PackIcon Kind="Devices"
                                      Width="18"
                                      Height="18"
-                                     Margin="0 0 7 0" />
-                        <TextBlock Text="{Binding Device.DeviceType, StringFormat='Тип устройства: {0}'}" />
-                    </StackPanel>
+                                     Margin="0 0 7 0"
+                                     Grid.Column="0" />
+                        <TextBlock Text="{Binding Device.DeviceType, StringFormat='Тип устройства: {0}'}"
+                                   Grid.Column="1" />
+                    </Grid>
 
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
                         <md:PackIcon Kind="{Binding Device.DevicePlatformIcon}"
                                      Width="18"
                                      Height="18"
-                                     Margin="0 0 7 0" />
-                        <TextBlock>
+                                     Margin="0 0 7 0"
+                                     Grid.Column="0" />
+                        <TextBlock Grid.Column="1">
                             <TextBlock.Text>
                                 <MultiBinding StringFormat="{}Операционная система: {0} {1}">
                                     <Binding Path="Device.DevicePlatform" />
@@ -114,70 +130,71 @@
                                 </MultiBinding>
                             </TextBlock.Text>
                         </TextBlock>
-                    </StackPanel>
+                    </Grid>
                 </StackPanel>
             </Grid>
 
-            <Rectangle Grid.Row="1"
-                       Margin="0 15 -10 15"
-                       HorizontalAlignment="Stretch"
-                       Fill="{DynamicResource MaterialDesign.Brush.Primary.Dark}"
-                       Height="1" />
+            <GridSplitter Grid.Row="1"
+                          Margin="0 15 -10 15"
+                          ShowsPreview="False"
+                          Height="3"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Center" 
+                          Focusable="False"/>
 
-            <ScrollViewer Grid.Row="2"
-                          md:ScrollViewerAssist.IsAutoHideEnabled="True"
-                          md:ScrollViewerAssist.CornerRectangleVisibility="Collapsed"
-                          md:ScrollViewerAssist.BubbleVerticalScroll="True"
-                          FlowDirection="RightToLeft"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Auto">
-                <Grid FlowDirection="LeftToRight">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
 
-                    <TextBlock Text="Мониторинг ресурсов"
-                               FontSize="24"
-                               FontWeight="Bold"
-                               VerticalAlignment="Center"
-                               Grid.Row="0" />
-                    <StackPanel Grid.Row="1"
-                                Margin="0 10">
-                        <TextBlock
-                            Text="{Binding DeviceStatuses.AmountOfOccupiedRAM, StringFormat='Занятая оперативная память: {0} ГБ'}"
-                            Margin="0 0 0 5" />
-                        <ProgressBar Maximum="{Binding DeviceStatuses.AmountOfRAM}"
-                                     Value="{Binding DeviceStatuses.AmountOfOccupiedRAM}" />
-                    </StackPanel>
-                    <StackPanel Grid.Row="2"
-                                Margin="0 10">
-                        <TextBlock
-                            Text="{Binding DeviceStatuses.ButteryChargePercent, StringFormat='Заряд батареи: {0}%'}"
-                            Margin="0 0 0 5" />
-                        <ProgressBar Maximum="100"
-                                     Value="{Binding DeviceStatuses.ButteryChargePercent}" />
-                    </StackPanel>
-                    <StackPanel Grid.Row="3"
-                                Margin="0 10">
-                        <TextBlock
-                            Text="{Binding DeviceStatuses.PercentageOfCPUUsage, StringFormat='Процент загрузки ЦПУ: {0}%'}"
-                            Margin="0 0 0 5" />
-                        <ProgressBar Maximum="100"
-                                     Value="{Binding DeviceStatuses.PercentageOfCPUUsage}" />
-                    </StackPanel>
-                </Grid>
-            </ScrollViewer>
+            <Grid Grid.Row="2"
+                  x:Name="statusesGrid">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Мониторинг ресурсов"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Grid.Row="0" />
+                <StackPanel Grid.Row="1"
+                            Margin="0 10">
+                    <TextBlock
+                        Text="{Binding DeviceStatuses.AmountOfOccupiedRAM, StringFormat='Занятая оперативная память: {0} ГБ'}"
+                        Margin="0 0 0 5" />
+                    <ProgressBar Maximum="{Binding DeviceStatuses.AmountOfRAM}"
+                                 Value="{Binding DeviceStatuses.AmountOfOccupiedRAM}"
+                                 Width="{Binding ElementName=statusesGrid, Path=Width, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
+                </StackPanel>
+                <StackPanel Grid.Row="2"
+                            Margin="0 10">
+                    <TextBlock
+                        Text="{Binding DeviceStatuses.ButteryChargePercent, StringFormat='Заряд батареи: {0}%'}"
+                        Margin="0 0 0 5" />
+                    <ProgressBar Maximum="100"
+                                 Value="{Binding DeviceStatuses.ButteryChargePercent}"
+                                 Width="{Binding ElementName=statusesGrid, Path=Width, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
+                </StackPanel>
+                <StackPanel Grid.Row="3"
+                            Margin="0 10">
+                    <TextBlock
+                        Text="{Binding DeviceStatuses.PercentageOfCPUUsage, StringFormat='Процент загрузки ЦПУ: {0}%'}"
+                        Margin="0 0 0 5" />
+                    <ProgressBar Maximum="100"
+                                 Value="{Binding DeviceStatuses.PercentageOfCPUUsage}"
+                                 Width="{Binding ElementName=statusesGrid, Path=Width, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
+                </StackPanel>
+            </Grid>
         </Grid>
 
-        <Rectangle Grid.Column="1"
-                   Margin="-30,0,0,0"
-                   VerticalAlignment="Stretch"
-                   Fill="{DynamicResource MaterialDesign.Brush.Primary.Dark}"
-                   Width="1" />
+        <GridSplitter Grid.Column="1"
+                      Margin="-30 0 0 0"
+                      ShowsPreview="False"
+                      Width="3"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Stretch" 
+                      Focusable="False"/>
 
         <Grid Grid.Column="2">
             <Grid.RowDefinitions>
@@ -185,37 +202,51 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <UniformGrid Rows="4"
-                         Grid.Row="0">
+            <Grid Grid.Row="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
                 <TextBlock Text="Параметры системы"
-                           FontSize="24"
-                           FontWeight="Bold" />
+                           FontSize="20"
+                           FontWeight="Bold"
+                           Grid.Row="0" />
 
-                <StackPanel Orientation="Horizontal">
+                <Grid Grid.Row="1"
+                      Margin="0 5 0 10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
                     <md:PackIcon Kind="Server"
                                  Width="18"
                                  Height="18"
-                                 Margin="0 0 7 0" />
-                    <TextBlock Text="{Binding DeviceStatuses.AmountOfRAM, StringFormat='Количество ОЗУ: {0} ГБ'}" />
-                </StackPanel>
-            </UniformGrid>
+                                 Margin="0 0 7 0" 
+                                 Grid.Column="0"/>
+                    <TextBlock Text="{Binding DeviceStatuses.AmountOfRAM, StringFormat='Количество ОЗУ: {0} ГБ'}" 
+                               Grid.Column="1"/>
+                </Grid>
+            </Grid>
 
             <UniformGrid Rows="2"
                          Grid.Row="1"
                          VerticalAlignment="Top">
                 <TextBlock Text="Команды"
-                           FontSize="24"
+                           FontSize="20"
                            FontWeight="Bold" />
 
                 <UniformGrid Columns="3">
                     <Button Content="Проводник"
-                            Margin="10 2"
-                            Command="{Binding OpenDeviceFolerCommand}"/>
+                            Margin="5 2"
+                            Command="{Binding OpenDeviceFolerCommand}" />
                     <Button Content="Скриншот"
-                            Margin="10 2"
+                            Margin="5 2"
                             Command="{Binding TakeScreenshotCommand}" />
-                    <Button Content="Что-то"
-                            Margin="10 2" />
+                    <Button Margin="5 2" 
+                            Command="{Binding OpenRunningProgramsCommand}">
+                        <TextBlock Text="Текущие процессы"
+                                   TextWrapping="Wrap"/>
+                    </Button>
                 </UniformGrid>
             </UniformGrid>
         </Grid>

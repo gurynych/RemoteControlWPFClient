@@ -22,15 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="NetworkMessage">
-      <HintPath>..\..\NetworkMessage\NetworkMessage\bin\Debug\net8.0\NetworkMessage.dll</HintPath>
-    </Reference>
-    <Reference Include="NetworkMessage.Windows">
-      <HintPath>..\..\NetworkMessage.Windows\NetworkMessage.Windows\bin\Debug\net8.0-windows7.0\NetworkMessage.Windows.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="Resources\Main.ico" />
     <Resource Include="Resources\Main.ico" />
     <None Remove="Resources\phone.svg" />
@@ -87,6 +78,15 @@
       <XamlRuntime>Wpf</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="NetworkMessage">
+      <HintPath>..\..\RemoteControlCommunicator\NetworkMessage\bin\Debug\net8.0\NetworkMessage.dll</HintPath>
+    </Reference>
+    <Reference Include="NetworkMessage.Windows">
+      <HintPath>..\..\NetworkMessage.Windows\NetworkMessage.Windows\bin\Debug\net8.0-windows7.0\NetworkMessage.Windows.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

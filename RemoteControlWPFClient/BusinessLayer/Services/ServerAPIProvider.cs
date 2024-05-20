@@ -2,23 +2,23 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using NetworkMessage.CommandFactory;
 using NetworkMessage.CommandsResults.ConcreteCommandResults;
-using NetworkMessage.Models;
+using NetworkMessage.DTO;
 using Newtonsoft.Json;
 using RemoteControlWPFClient.BusinessLayer.DTO;
 using RemoteControlWPFClient.WpfLayer.IoC;
+using FileInfoDTO = RemoteControlWPFClient.BusinessLayer.DTO.FileInfoDTO;
 
 namespace RemoteControlWPFClient.BusinessLayer.Services
 {
     public class ServerAPIProvider : ITransient
     {
-        public const string ServerAddress = "192.168.1.162";
+        public const string ServerAddress = "192.168.1.82";
         public const string ServerPort = "5000";
         private const string AuthtorizeAPIUri = $"http://{ServerAddress}:{ServerPort}/api/AuthentificationAPI/AuthorizeFromDevice";
         private const string RegisterAPIUri = $"http://{ServerAddress}:{ServerPort}/api/AuthentificationAPI/RegisterFromDevice";
@@ -27,8 +27,10 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
         private const string GetConnectedDeviceUri = $"http://{ServerAddress}:{ServerPort}/api/DeviceAPI/GetConnectedDevices";
 		private const string GetUserByTokenUri = $"http://{ServerAddress}:{ServerPort}/api/AuthentificationAPI/GetUserByToken";
 		private const string DownloadFileUri = $"http://{ServerAddress}:{ServerPort}/api/DeviceAPI/DownloadFile";
+		private const string DownloadDirectoryUri = $"http://{ServerAddress}:{ServerPort}/api/DeviceAPI/DownloadDirectory";
 		private const string GetDeviceStatusesUri = $"http://{ServerAddress}:{ServerPort}/api/DeviceAPI/GetDeviceStatuses";
 		private const string GetScreenshotUri = $"http://{ServerAddress}:{ServerPort}/api/DeviceAPI/GetScreenshot";
+		private const string GetRunninProgramsUri = $"http://{ServerAddress}:{ServerPort}/api/DeviceAPI/GetRunninPrograms";
         private readonly ICommandFactory factory;	
 
         public ServerAPIProvider(ICommandFactory factory)
@@ -186,7 +188,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 			
 			if (allFiles?.NestedDirectoriesInfo != null)
 			{
-				foreach (MyDirectoryInfo dir in allFiles.NestedDirectoriesInfo)
+				foreach (NetworkMessage.DTO.FileInfoDTO dir in allFiles.NestedDirectoriesInfo)
 				{
 					yield return new FileInfoDTO(dir);
 				}
@@ -194,7 +196,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 
 			if (allFiles?.NestedFilesInfo != null)
 			{
-				foreach (MyFileInfo file in allFiles.NestedFilesInfo)
+				foreach (NetworkMessage.DTO.FileInfoDTO file in allFiles.NestedFilesInfo)
 				{
 					yield return new FileInfoDTO(file);
 				}
@@ -215,6 +217,39 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 				                    $"deviceId={device.Id}&" +
 				                    $"&path={path}";
 
+				HttpResponseMessage response = await client.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, token);
+				if (response.IsSuccessStatusCode)
+				{
+					using (Stream stream = await response.Content.ReadAsStreamAsync(token))
+						await stream.CopyToAsync(streamToWrite);
+				}
+				else
+				{
+					string errorResponse = await response.Content.ReadAsStringAsync(token);
+					Debug.WriteLine("Ошибка при выполнении запроса: " + response.StatusCode + $"\n{errorResponse}");
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine(ex.Message);
+				throw;
+			}
+		}
+		
+		public async Task DownloadDirectoryAsync(UserDTO user, DeviceDTO device, string path, Stream streamToWrite, CancellationToken token = default)
+		{
+			if (user == null) throw new ArgumentNullException(nameof(user));
+			if (device == null) throw new ArgumentNullException(nameof(device));
+			
+			using HttpClient client = new HttpClient();
+			try
+			{
+				string encodedToken = WebUtility.UrlEncode(Convert.ToBase64String(user.AuthToken));
+				string requestUri = DownloadDirectoryUri +
+				                    $"?userToken={encodedToken}&" +
+				                    $"deviceId={device.Id}&" +
+				                    $"&path={path}";
+
 				HttpResponseMessage response = await client.GetAsync(requestUri, token);
 				if (response.IsSuccessStatusCode)
 				{
@@ -224,13 +259,44 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 				else
 				{
 					string errorResponse = await response.Content.ReadAsStringAsync(token);
-					Debug.WriteLine("Ошибка при выполнении запроса: " + response.StatusCode);
+					Debug.WriteLine("Ошибка при выполнении запроса: " + response.StatusCode + $"\n{errorResponse}");
 				}
 			}
 			catch (Exception ex)
 			{
 				Debug.WriteLine(ex.Message);
+				throw;
 			}
+		}
+		
+		public async Task<IEnumerable<ProgramInfoDTO>> GetRunninProgramsAsync(UserDTO user, DeviceDTO device, CancellationToken token = default)
+		{
+			if (user == null) throw new ArgumentNullException(nameof(user));
+			if (device == null) throw new ArgumentNullException(nameof(device));
+			
+			using HttpClient client = new HttpClient();
+			HttpResponseMessage response = null;
+			try
+			{
+				string encodedToken = WebUtility.UrlEncode(Convert.ToBase64String(user.AuthToken));
+				string requestUri = GetRunninProgramsUri +
+				                    $"?userToken={encodedToken}" +
+				                    $"&deviceId={device.Id}";
+
+				response = await client.GetAsync(requestUri, token);
+				if (response.IsSuccessStatusCode)
+				{
+					return JsonConvert.DeserializeObject<List<ProgramInfoDTO>>(await response.Content.ReadAsStringAsync(token).ConfigureAwait(false));
+				}
+
+				throw new InvalidOperationException();
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine(ex.Message);
+				Debug.WriteLine("Ошибка при выполнении запроса: " + response?.StatusCode);
+				throw;
+			}	
 		}
 		
 		public async Task<UserDTO> GetUserByToken(byte[] usertoken, CancellationToken token = default)
@@ -267,10 +333,11 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 				throw;
 			}
 		}
+		
 		/// <summary>
 		/// Асинхронный метод для авторизации пользователя через токен
 		/// </summary>
-		/// <param name="user"></param>
+		/// <param name="userToken"></param>
 		/// <returns>Открытый ключ сервера</returns>
 		/// <exception cref="WebException"/>
 		/// <exception cref="ArgumentNullException"/>
@@ -403,8 +470,8 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
     
 	internal sealed class NestedFileInfoInDirectories
     {
-	    public List<MyFileInfo> NestedFilesInfo { get; set; }
+	    public List<NetworkMessage.DTO.FileInfoDTO> NestedFilesInfo { get; set; }
 	    
-	    public List<MyDirectoryInfo> NestedDirectoriesInfo { get; set; }
+	    public List<NetworkMessage.DTO.FileInfoDTO> NestedDirectoriesInfo { get; set; }
     }
 }

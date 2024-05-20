@@ -17,6 +17,7 @@
         <converters:LastInCollectionConverter x:Key="LastInCollectionConverter" />
         <converters:CollectionLengthGreaterThenConverter x:Key="CollectionLengthGreaterThenConverter" />
         <converters:CollectionToPathConverter x:Key="CollectionToPathConverter" />
+        <converters:BytesToReadStringConverter x:Key="BytesToReadStringConverter"/>
     </UserControl.Resources>
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">
@@ -130,6 +131,12 @@
                   Margin="0 10 0 5"
                   Grid.Row="1"
                   HorizontalScrollBarVisibility="Auto">
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="MouseDoubleClick">
+                    <i:InvokeCommandAction Command="{Binding OpenDriveOrDirectoryCommand}"
+                                           CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
             <DataGrid.CellStyle>
                 <Style TargetType="{x:Type DataGridCell}">
                     <Setter Property="Focusable"
@@ -167,6 +174,11 @@
                                 <md:PackIcon.Style>
                                     <Style TargetType="{x:Type md:PackIcon}">
                                         <Style.Triggers>
+                                            <DataTrigger Binding="{Binding FileType}"
+                                                         Value="Drive">
+                                                <Setter Property="ToolTip"
+                                                        Value="Диск" />
+                                            </DataTrigger>
                                             <DataTrigger Binding="{Binding FileType}"
                                                          Value="File">
                                                 <Setter Property="ToolTip"
@@ -211,10 +223,10 @@
 
                 <DataGridTemplateColumn Header="Размер"
                                         CanUserSort="True"
-                                        SortMemberPath="FileLengthMb">
+                                        SortMemberPath="FileLength">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding FileLengthMb, StringFormat='{}{0} МБ'}"
+                            <TextBlock Text="{Binding FileLength, Converter={StaticResource BytesToReadStringConverter}}"
                                        VerticalAlignment="Center"
                                        HorizontalAlignment="Center" />
                         </DataTemplate>
@@ -227,20 +239,29 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Focusable="False"
-                                    Command="{Binding }">
+                                    CommandParameter="{Binding}">
                                 <Button.Style>
                                     <Style TargetType="{x:Type Button}"
                                            BasedOn="{StaticResource MaterialDesignIconButton}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding FileType}"
+                                                         Value="Drive">
+                                                <Setter Property="Visibility"
+                                                        Value="Hidden" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding FileType}"
                                                          Value="File">
                                                 <Setter Property="ToolTip"
                                                         Value="Скачать файл" />
+                                                <Setter Property="Command"
+                                                        Value="{Binding DataContext.DownloadFileComamnd, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}}"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding FileType}"
                                                          Value="Directory">
                                                 <Setter Property="ToolTip"
                                                         Value="Скачать архив" />
+                                                <Setter Property="Command"
+                                                        Value="{Binding DataContext.DownloadDirectoryCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}}"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -293,7 +314,16 @@
                                                 <Setter Property="Content"
                                                         Value="Открыть" />
                                                 <Setter Property="Command"
-                                                        Value="{Binding DataContext.OpenDirectoryCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}, IsAsync=True}" />
+                                                        Value="{Binding DataContext.OpenDriveOrDirectoryCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}, IsAsync=True}" />
+                                                <Setter Property="CommandParameter"
+                                                        Value="{Binding}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding FileType}"
+                                                         Value="Drive">
+                                                <Setter Property="Content"
+                                                        Value="Открыть" />
+                                                <Setter Property="Command"
+                                                        Value="{Binding DataContext.OpenDriveOrDirectoryCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}, IsAsync=True}" />
                                                 <Setter Property="CommandParameter"
                                                         Value="{Binding}" />
                                             </DataTrigger>

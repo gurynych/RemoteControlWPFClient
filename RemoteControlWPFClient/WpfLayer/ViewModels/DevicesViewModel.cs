@@ -44,9 +44,10 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 
         private async Task LoadConnectedDevicesAsync()
         {
+            ConnectedDevices.Clear();
             var tokenSource = new CancellationTokenSource(10000);
             List<DeviceDTO> devices = await apiProvider.GetConnectedDeviceAsync(UserDto, tokenSource.Token);
-            devices.ForEach(ConnectedDevices.Add);
+            devices?.ForEach(ConnectedDevices.Add);
         }
 
         private ICommand openDeviceCommand;
@@ -67,7 +68,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 
                 DeviceInfoUC control =
                     IoCContainer.OpenViewModel<DeviceInfoViewModel, DeviceInfoUC>(device, deviceStatuses);
-                await eventBus.Publish(new ChangeUserControlEvent(control));
+                await eventBus.Publish(new ChangeControlEvent(control, false));
             }
             catch (Exception ex)
             {

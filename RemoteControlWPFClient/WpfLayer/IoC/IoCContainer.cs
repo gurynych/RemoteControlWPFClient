@@ -68,8 +68,8 @@ namespace RemoteControlWPFClient.WpfLayer.IoC
         {
             try
             {
-                TControl control = typeof(TControl).GetConstructor(Type.EmptyTypes)?.Invoke(null) as TControl;
                 TViewModel viewModel = ActivatorUtilities.CreateInstance<TViewModel>(provider);
+                TControl control = typeof(TControl).GetConstructor(Type.EmptyTypes)?.Invoke(null) as TControl;
                 control!.DataContext = viewModel;
                 return control;
             }
@@ -87,8 +87,8 @@ namespace RemoteControlWPFClient.WpfLayer.IoC
         {
             try
             {
-                TControl control = typeof(TControl).GetConstructor(Type.EmptyTypes)?.Invoke(null) as TControl;
                 TViewModel viewModel = ActivatorUtilities.CreateInstance<TViewModel>(provider, parameters);
+                TControl control = typeof(TControl).GetConstructor(Type.EmptyTypes)?.Invoke(null) as TControl;
                 control!.DataContext = viewModel;
                 return control;
             }

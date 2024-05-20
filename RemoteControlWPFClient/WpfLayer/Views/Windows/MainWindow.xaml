@@ -6,6 +6,8 @@
         xmlns:tb="http://www.hardcodet.net/taskbar"
         xmlns:vm="clr-namespace:RemoteControlWPFClient.WpfLayer.ViewModels"
         xmlns:local="clr-namespace:RemoteControlWPFClient.WpfLayer.Views.Windows"
+        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:converters="clr-namespace:RemoteControlWPFClient.WpfLayer.Converters"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         Height="600"
@@ -13,6 +15,9 @@
         Style="{StaticResource MaterialDesignWindow}"
         FontSize="18"
         d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=False}">
+    <Window.Resources>
+        <converters:CollectionLengthGreaterThenConverter x:Key="CollectionLengthGreaterThenConverter"/>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -25,20 +30,52 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Menu Grid.Column="0">
+            <Menu Grid.Column="0"
+                  FontSize="16">
                 <MenuItem Header="RemoteControl" FontWeight="Bold" />
                 <MenuItem Header="Главная"
                           Command="{Binding OpenMainControlCommand}"/>
+                <MenuItem Header="Устройства"
+                          Command="{Binding OpenDevicesCommand}"/>
+                <MenuItem Command="{Binding PopOpenedControlHistoryCommand}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="ArrowBack"
+                                         Width="16"
+                                         Height="16"
+                                         Margin="0 0 7 0"/>
+                            <TextBlock Text="Предыдущее окно"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                    <MenuItem.Style>
+                        <Style TargetType="{x:Type MenuItem}"
+                               BasedOn="{StaticResource MaterialDesignMenuItem}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding OpenedControlsHistory, Converter={StaticResource CollectionLengthGreaterThenConverter}, ConverterParameter=0}"
+                                             Value="False">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding OpenedControlsHistory, Converter={StaticResource CollectionLengthGreaterThenConverter}, ConverterParameter=0}"
+                                             Value="True">
+                                    <Setter Property="Visibility"
+                                            Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
             </Menu>
             
             <Menu Grid.Column="1"
+                  FontSize="16"
                   HorizontalAlignment="Right">
                 <MenuItem Header="{Binding UserLogin}"/>
             </Menu>
         </Grid>
      
         <ContentControl Grid.Row="1" 
-            Content="{Binding UserControl}">
+            Content="{Binding CurrentControl}">
         </ContentControl>
     </Grid>
 </Window>

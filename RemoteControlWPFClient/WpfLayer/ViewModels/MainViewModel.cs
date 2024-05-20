@@ -1,9 +1,11 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using RemoteControlWPFClient.BusinessLayer.DTO;
 using RemoteControlWPFClient.BusinessLayer.Services;
 using RemoteControlWPFClient.WpfLayer.Views.UserControls.Authentification;
 using RemoteControlWPFClient.WpfLayer.Views.UserControls.Home;
@@ -12,6 +14,7 @@ using RemoteControlWPFClient.WpfLayer.Command;
 using RemoteControlWPFClient.WpfLayer.Events;
 using RemoteControlWPFClient.WpfLayer.IoC;
 using RemoteControlWPFClient.WpfLayer.ViewModels.Abstractions;
+using RemoteControlWPFClient.WpfLayer.Views.UserControls.Device;
 
 namespace RemoteControlWPFClient.WpfLayer.ViewModels
 {
@@ -20,54 +23,85 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
         private readonly Client client;
         private readonly EventBus eventBus;
         private readonly CommandsRecipientService commandsRecipient;
-		private readonly CurrentUserServices currentUser;
-		
-        [ObservableProperty]
-        private UserControl userControl;
+        private readonly CurrentUserServices currentUser;
 
-        [ObservableProperty]
-        private Visibility menuVisibility;
+        [ObservableProperty] private Control currentControl;
+        [ObservableProperty] private Visibility menuVisibility;
+        [ObservableProperty] private string userLogin;
+        public ObservableCollection<Control> OpenedControlsHistory { get; set; }
 
-        [ObservableProperty]
-        private string userLogin;
-
-        public MainViewModel(Client client, EventBus eventBus, CommandsRecipientService commandsRecipient,CurrentUserServices currentUser)
+        public MainViewModel(Client client, EventBus eventBus, CommandsRecipientService commandsRecipient,
+            CurrentUserServices currentUser)
         {
-            this.client = client;
-            this.eventBus = eventBus;
-            this.commandsRecipient = commandsRecipient;
-			this.currentUser = currentUser;
-            userLogin = this.currentUser.CurrentUser.Login;
+            this.client = client ?? throw new ArgumentNullException(nameof(client));
+            this.eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
+            this.commandsRecipient = commandsRecipient ?? throw new ArgumentNullException(nameof(commandsRecipient));
+            this.currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
+            OpenedControlsHistory = new ObservableCollection<Control>();
+            
+            userLogin = currentUser.CurrentUser?.Login;
             MenuVisibility = Visibility.Collapsed;
-			eventBus?.Subscribe<ChangeUserControlEvent>(@event => ChangeUserControl(@event.UserControl));
+            eventBus?.Subscribe<ChangeControlEvent>(@event => ChangeControl(@event.NewControl, @event.ClearHistory));
+            OpenedControlsHistory.CollectionChanged += (_, _) => OnPropertyChanged(nameof(OpenedControlsHistory));
         }
 
         /// <summary>
         /// Метод для смены UserControl
         /// </summary>
-        /// <param name="newUserControl"></param>
-        private Task ChangeUserControl(UserControl newUserControl)
+        /// <param name="newControl">Новый контрол для отображения на MainWindow</param>
+        /// <param name="clearHistory">Флаг, указывающий нужно ли стереть историю открытых контролов</param>
+        private Task ChangeControl(Control newControl, bool clearHistory)
         {
-            if (newUserControl is AuthentifcationUC)
+            MenuVisibility = (newControl is AuthentifcationUC) ? Visibility.Collapsed : Visibility.Visible;
+            if (clearHistory)
             {
-                MenuVisibility = Visibility.Collapsed;
+                OpenedControlsHistory.Clear();
             }
-            else
+
+            if (newControl is not HomeUC)
             {
-                MenuVisibility = Visibility.Visible;
+                OpenedControlsHistory.Add(newControl);
             }
-            
-            UserControl = newUserControl;
+
+            UserLogin = currentUser.CurrentUser?.Login;
+            CurrentControl = newControl;
             return Task.CompletedTask;
         }
 
-        public ICommand OpenMainControlCommand => new RelayCommand(OpenMainControl);
+        private ICommand openMainControlCommand;
+        public ICommand OpenMainControlCommand => openMainControlCommand ??= new RelayCommand(OpenMainControl);
 
+        private ICommand popOpenedControlHistoryCommand;
+        public ICommand PopOpenedControlHistoryCommand => popOpenedControlHistoryCommand ??= new RelayCommand(PopOpenedControlHistory);
+
+        private ICommand openDevicesCommand; 
+        public ICommand OpenDevicesCommand => openDevicesCommand ??= new AwaitableCommand(async () =>
+        {
+            DevicesUC control = IoCContainer.OpenViewModel<DevicesViewModel, DevicesUC>();
+            await eventBus.Publish(new ChangeControlEvent(control, false));
+        });
+        
+        private void PopOpenedControlHistory()
+        {
+            if (!OpenedControlsHistory.Any()) return;
+            OpenedControlsHistory.RemoveAt(OpenedControlsHistory.Count - 1);
+            Control previousControl = OpenedControlsHistory.LastOrDefault();
+            if (previousControl == null)
+            {
+                OpenMainControl();
+            }
+            else
+            {
+                CurrentControl = previousControl;
+            }
+        }
+        
         private void OpenMainControl()
         {
-            if (UserControl is HomeUC) return;
+            if (CurrentControl is HomeUC) return;
+            OpenedControlsHistory.Clear();
             HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
-            UserControl = control;
+            CurrentControl = control;
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DevExpress.Mvvm;
 using RemoteControlWPFClient.BusinessLayer.DTO;
+using RemoteControlWPFClient.BusinessLayer.Helpers;
 using RemoteControlWPFClient.BusinessLayer.Services;
 using RemoteControlWPFClient.WpfLayer.Events;
 using RemoteControlWPFClient.WpfLayer.IoC;
@@ -42,34 +43,35 @@ public partial class DeviceInfoViewModel : ViewModelBase<DeviceInfoUC>, ITransie
     private ICommand openDeviceFolerCommand;
     public ICommand OpenDeviceFolerCommand => openDeviceFolerCommand ??= new AsyncCommand(OpenDeviceFolderAsync);
 
+    private ICommand openRunningProgramsCommand;
+    public ICommand OpenRunningProgramsCommand => openRunningProgramsCommand ??= new AsyncCommand(OpenRunningProgramsAsync);
+
     private async Task OpenDeviceFolderAsync()
     {
         DeviceFolderUC control = IoCContainer.OpenViewModel<DeviceFolderViewModel, DeviceFolderUC>(Device);
-        await eventBus.Publish(new ChangeUserControlEvent(control));
+        await eventBus.Publish(new ChangeControlEvent(control, false));
+    }
+    
+    private async Task OpenRunningProgramsAsync()
+    {
+        RunninProgramsUC control = IoCContainer.OpenViewModel<RunningProgramsViewModel, RunninProgramsUC>(Device);
+        await eventBus.Publish(new ChangeControlEvent(control, false));
     }
 
     private async Task DownloadScreenshotAsync()
     {
         try
         {
-            string downloadDirPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Downloads");
-            string screenshotPath =
-                Path.Combine(downloadDirPath,
-                    $"Screenshot_{Device?.DeviceName}_{DateTime.Now.ToString("dd_MM_yyyy")}");
-            string extension = ".jpeg";
-            int i = 1;
-            string tempPath = screenshotPath;
-            while (File.Exists(tempPath + extension))
-            {
-                tempPath = screenshotPath + $"({i++})";
-            }
-            screenshotPath = tempPath + extension;
-            
-            using FileStream fs = File.Open(screenshotPath, FileMode.Create);
             CancellationTokenSource tokenSource = new CancellationTokenSource(50000);
+            string downloadDirPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            string screenshotPath = $"Screenshot_{Device?.DeviceName}_{DateTime.Now.ToString("dd_MM_yyyy")}.jpeg";
+            screenshotPath = FileSaver.CreateUniqDownloadPath(screenshotPath, downloadDirPath);
 
-            await apiProvider.GetScreenshot(currentUser.CurrentUser, Device, fs, tokenSource.Token);
+            using (FileStream fs = File.Open(screenshotPath, FileMode.Create))
+            {
+                await apiProvider.GetScreenshot(currentUser.CurrentUser, Device, fs, tokenSource.Token);
+            }
+
             MessageBoxResult dialogResult = MessageBox.Show("Скриншот сохранен в папку загрузки. Открыть расположение?",
                 "Команда выполнена",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -81,7 +83,6 @@ public partial class DeviceInfoViewModel : ViewModelBase<DeviceInfoUC>, ITransie
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            throw;
         }
     }
 }

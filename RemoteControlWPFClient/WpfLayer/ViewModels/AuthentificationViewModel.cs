@@ -71,11 +71,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 
         [ObservableProperty]
         private long sendProcessProgress;
-
-        public ICommand AuthorizationCommand => new AwaitableCommand(AuthorizeWithConnectToServer, obj => !HasErrors);
-
-        public ICommand RegistrationCommand => new AwaitableCommand(RegisterWithConnectToServer, obj => !HasErrors);
-
+        
         public AuthentificationViewModel(CurrentUserServices userServices, EventBus eventBus, TcpCryptoClientCommunicator client, ICommandFactory commandFactory, ServerAPIProvider apiProvider,
             CurrentUserServices currentUser)
         {
@@ -87,10 +83,19 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 			this.currentUser = currentUser;
         }
 
+        private ICommand authorizationCommand;
+        public ICommand AuthorizationCommand => authorizationCommand ??=
+            new AwaitableCommand(AuthorizeWithConnectToServerAsync, _ => !HasErrors);
+
+        private ICommand registrationCommand;
+        public ICommand RegistrationCommand => registrationCommand ??=
+            new AwaitableCommand(RegisterWithConnectToServerAsync, _ => !HasErrors);
+
+        
         /// <summary>
         /// Асинхронный метод для авторизации в приложении через API и установки подключения к серверу по сокету
         /// </summary>        
-        private async Task AuthorizeWithConnectToServer(object obj)
+        private async Task AuthorizeWithConnectToServerAsync(object obj)
         {
             try
             {
@@ -106,7 +111,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 
                 userDto = await apiProvider.GetUserByToken(userToken, tokenSource.Token);
                 userServices.Enter(userDto);
-				await CredentialsHelper.WriteUserTokenToFile(userToken, tokenSource.Token);
+				await CredentialsHelper.WriteUserTokenToFileAsync(userToken, tokenSource.Token);
 
                 bool connected = await communicator.ConnectAsync(ServerAPIProvider.ServerAddress, 11000, tokenSource.Token);
                 if (!connected) return;
@@ -122,7 +127,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                         userDto.AuthToken = userToken;
                         currentUser.Enter(userDto);
                         HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
-						await eventBus.Publish(new ChangeUserControlEvent(control));
+						await eventBus.Publish(new ChangeControlEvent(control, false));
 						tokenSource.Dispose();
 						return;
                     }
@@ -178,7 +183,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
         /// <summary>
         /// Асинхронный метод для регистрации в приложении через API и установки подключения к серверу по сокету
         /// </summary>       
-        private async Task RegisterWithConnectToServer(object obj)
+        private async Task RegisterWithConnectToServerAsync(object obj)
         {
             try
             {
@@ -194,7 +199,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 
                 userDto = await apiProvider.GetUserByToken(userToken, tokenSource.Token);
                 userServices.Enter(userDto);
-                await CredentialsHelper.WriteUserTokenToFile(userToken, tokenSource.Token);
+                await CredentialsHelper.WriteUserTokenToFileAsync(userToken, tokenSource.Token);
                 
                 bool connected = await communicator.ConnectAsync(ServerAPIProvider.ServerAddress, 11000, tokenSource.Token);
                 if (!connected) return;
@@ -208,7 +213,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                     if (success)
                     {
                         HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
-                        await eventBus.Publish(new ChangeUserControlEvent(control));
+                        await eventBus.Publish(new ChangeControlEvent(control, true));
 						return;
                     }
 
@@ -263,6 +268,5 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                 tokenSource.Dispose();
             }
         }
-        
     }
 }

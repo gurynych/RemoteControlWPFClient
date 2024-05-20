@@ -63,7 +63,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                 try
                 {
                     stopwatch.Start();
-                    byte[] userToken = await CredentialsHelper.ReadUserTokenFromFile(tokenSource.Token);
+                    byte[] userToken = await CredentialsHelper.ReadUserTokenFromFileAsync(tokenSource.Token);
                     byte[] serverPublicKey =
                         await apiProvider.UserAuthorizationWithTokenUseAPIAsync(userToken, tokenSource.Token);
 
@@ -95,7 +95,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                             mainWindow?.Show();
 
                             HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
-                            await eventBus.Publish(new ChangeUserControlEvent(control));
+                            await eventBus.Publish(new ChangeControlEvent(control, true));
                             return;
                         }
 
@@ -123,7 +123,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 
                     AuthentifcationUC control =
                         IoCContainer.OpenViewModel<AuthentificationViewModel, AuthentifcationUC>();
-                    await eventBus.Publish(new ChangeUserControlEvent(control));
+                    await eventBus.Publish(new ChangeControlEvent(control, false));
                 }
                 finally
                 {

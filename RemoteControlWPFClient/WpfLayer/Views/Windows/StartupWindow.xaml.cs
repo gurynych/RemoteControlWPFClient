@@ -22,6 +22,8 @@ namespace RemoteControlWPFClient.WpfLayer.Views.Windows
         public StartupWindow()
         {
             InitializeComponent();
+            string applicationName = (Application.Current as App)!.ApplicationName;
+            Title = applicationName;
         }
     }
 }

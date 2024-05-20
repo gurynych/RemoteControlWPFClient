@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -10,12 +10,15 @@ using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DevExpress.Mvvm;
+using NetworkMessage.DTO;
 using RemoteControlWPFClient.BusinessLayer.DTO;
+using RemoteControlWPFClient.BusinessLayer.Helpers;
 using RemoteControlWPFClient.BusinessLayer.Services;
 using RemoteControlWPFClient.WpfLayer.Command;
 using RemoteControlWPFClient.WpfLayer.IoC;
 using RemoteControlWPFClient.WpfLayer.ViewModels.Abstractions;
 using RemoteControlWPFClient.WpfLayer.Views.UserControls.Device;
+using FileInfoDTO = RemoteControlWPFClient.BusinessLayer.DTO.FileInfoDTO;
 
 namespace RemoteControlWPFClient.WpfLayer.ViewModels;
 
@@ -50,7 +53,7 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
     public ICommand LoadRootDirectoryCommand => loadRootDirectoryCommand ??= new AsyncCommand(LoadFilesInRootAsync);
 
     private ICommand openDirectoryCommand;
-    public ICommand OpenDirectoryCommand => openDirectoryCommand ??= new AsyncCommand<FileInfoDTO>(OpenDirectoryAsync);
+    public ICommand OpenDriveOrDirectoryCommand => openDirectoryCommand ??= new AsyncCommand<FileInfoDTO>(OpenDriveOrDirectoryAsync);
 
     private ICommand openPreviousDirectoryCommand;
 
@@ -66,8 +69,16 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
     private ICommand openByUserPathDirectoryCommand;
     public ICommand OpenByUserPathDirectoryCommand => openByUserPathDirectoryCommand ??= new AsyncCommand(OpenByUserPathDirectoryAsync);
 
+    private ICommand downloadFileCommand;
+    public ICommand DownloadFileComamnd => downloadFileCommand ??= new AsyncCommand<FileInfoDTO>(DownloadFileAsync);
+    
+    private ICommand downloadDirectoryCommand;
+    public ICommand DownloadDirectoryCommand => downloadDirectoryCommand ??= new AsyncCommand<FileInfoDTO>(DownloadDirectoryAsync);
+
     private async Task LoadFilesInRootAsync()
     {
+        if (IsLoad) return;
+        
         IsLoad = true;
 
         path = "root";
@@ -78,9 +89,9 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
         IsLoad = false;
     }
 
-    private async Task OpenDirectoryAsync(FileInfoDTO fileInfo)
+    private async Task OpenDriveOrDirectoryAsync(FileInfoDTO fileInfo)
     {
-        if (fileInfo.FileType != FileType.Directory)
+        if (fileInfo == null || fileInfo.FileType == FileType.File  || IsLoad)
         {
             return;
         }
@@ -96,6 +107,8 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
 
     private async Task BackInFolderAsync()
     {
+        if (IsLoad) return;
+        
         string previousDirectoryName = OpenedDirectoryHistory.LastOrDefault();
         if (previousDirectoryName == null) return;
 
@@ -112,6 +125,7 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
 
     private async Task RefreshDirectoryAsync()
     {
+        if (IsLoad) return;
         IsLoad = true;
 
         await TryLoadNestedFilesInDirectory(path);
@@ -121,6 +135,8 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
 
     private async Task SearchInFilesAsync()
     {
+        if (IsLoad) return;
+        
         IsLoad = true;
 
         if (string.IsNullOrWhiteSpace(SearchText))
@@ -132,7 +148,7 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
 
         List<FileInfoDTO> filtered = FileInfoList.Where(x =>
             {
-                bool nameComparison = x.Name.Contains(SearchText);
+                bool nameComparison = x.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
                 bool dateComparison = false;
                 if (x.ChangingDate.HasValue)
                 {
@@ -156,7 +172,7 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
 
     private async Task OpenByUserPathDirectoryAsync()
     {
-        if (string.IsNullOrWhiteSpace(FullPath) || FullPath.Length < device.DeviceName.Length) return;
+        if (string.IsNullOrWhiteSpace(FullPath) || FullPath.Length < device.DeviceName.Length  || IsLoad) return;
         IsLoad = true;
         
         path = "root" + FullPath[device.DeviceName.Length..];
@@ -191,27 +207,81 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
         }
     }
 
-    /*private async Task DownloadFileAsync(FileInfoDTO fileInfo)
+    private async Task DownloadFileAsync(FileInfoDTO fileInfo)
     {
+        if (fileInfo == null || fileInfo.FileType != FileType.File || IsLoad) return;
         IsLoad = true;
-        string pathForDowload = this.path + "/" + fileInfo.Name;
-        FileStream fs = File.Create(Path.GetTempPath(), int.MaxValue, FileOptions.Asynchronous);
+
+        string downloadDirPath =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+        string downloadPath = FileSaver.CreateUniqDownloadPath(fileInfo.Name, downloadDirPath);
         CancellationTokenSource tokenSource = new CancellationTokenSource(1000000);
-        byte[] fileBytes = await apiProvider.DownloadFileAsync(User, Device.Id, pathForDowload, tokenSource.Token);
-        if (fileBytes != null)
+        try
         {
-            FilesService fileService = new FilesService();
-            bool isSuccess = await fileService.SaveFileAsync(fileBytes, name);
-            if (isSuccess)
+            using (FileStream fs = File.OpenWrite(downloadPath))
             {
-                await Toast.Make("Файл сохранен в папке загрузки", CommunityToolkit.Maui.Core.ToastDuration.Short).Show();
+                await apiProvider.DownloadFileAsync(userServices.CurrentUser, device, fileInfo.FullName, fs,
+                    tokenSource.Token);
             }
-            else
+            
+            IsLoad = false;
+            
+            MessageBoxResult dialogResult = MessageBox.Show("Файл сохранен в папку загрузки. Открыть расположение?",
+                "Команда выполнена",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (dialogResult == MessageBoxResult.Yes)
             {
-                await Toast.Make("Ошибка сохранения файла", CommunityToolkit.Maui.Core.ToastDuration.Short).Show();
+                Process.Start("explorer.exe", downloadDirPath);
             }
         }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            IsLoad = false;
+        }
+        finally
+        {
+            tokenSource.Cancel();
+            tokenSource.Dispose();
+        }
+    }
 
-        IsLoad = false;
-    }*/
+    private async Task DownloadDirectoryAsync(FileInfoDTO fileInfo)
+    {
+        if (fileInfo == null || fileInfo.FileType != FileType.Directory || IsLoad) return;
+        IsLoad = true;
+
+        string downloadDirPath =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+        string downloadPath = FileSaver.CreateUniqDownloadPath($"{fileInfo.Name}.rar", downloadDirPath);
+        CancellationTokenSource tokenSource = new CancellationTokenSource(1000000);
+        try
+        {
+            using (FileStream fs = File.OpenWrite(downloadPath))
+            {
+                await apiProvider.DownloadDirectoryAsync(userServices.CurrentUser, device, fileInfo.FullName, fs,
+                    tokenSource.Token);
+            }
+            
+            IsLoad = false;
+            
+            MessageBoxResult dialogResult = MessageBox.Show("Архив сохранен в папку загрузки. Открыть расположение?",
+                "Команда выполнена",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (dialogResult == MessageBoxResult.Yes)
+            {
+                Process.Start("explorer.exe", downloadDirPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            IsLoad = false;
+        }
+        finally
+        {
+            tokenSource.Cancel();
+            tokenSource.Dispose();
+        }
+    }
 }
