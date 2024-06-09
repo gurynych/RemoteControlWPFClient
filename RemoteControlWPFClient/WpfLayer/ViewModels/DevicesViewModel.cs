@@ -55,6 +55,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 
         private async Task LoadDeviceAsync(DeviceDTO device)
         {
+            if (device.DeviceType != "PC") return;
             CancellationTokenSource tokenSource = null;
             try
             {
@@ -63,7 +64,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                 {
                     tokenSource = new CancellationTokenSource(50000);
                     deviceStatuses =
-                        await apiProvider.GetDeviceStatuses(currentUser.CurrentUser, device, tokenSource.Token);
+                        await apiProvider.GetDeviceStatusesAsync(currentUser.CurrentUser, device, tokenSource.Token);
                 }
 
                 DeviceInfoUC control =

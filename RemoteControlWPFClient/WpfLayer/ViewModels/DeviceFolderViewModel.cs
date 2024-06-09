@@ -25,6 +25,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels;
 public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITransient
 {
     private string path;
+    private IProgress<long> progress;
     private readonly CurrentUserServices userServices;
     private readonly ServerAPIProvider apiProvider;
     private readonly DeviceDTO device;
@@ -32,6 +33,14 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
     [ObservableProperty] private string fullPath;
     [ObservableProperty] private string searchText;
     [ObservableProperty] private bool isLoad;
+    [ObservableProperty] private int totalFilesAmount;
+    
+    [ObservableProperty] private bool isDownload;
+    [ObservableProperty] private string downloadableFileName;
+    [ObservableProperty] private long downloadableBytesAmount;
+    [ObservableProperty] private long totalBytesAmount;
+    [ObservableProperty] private int percentDownloaded;
+    
     public ObservableCollection<string> OpenedDirectoryHistory { get; }
     public ObservableCollection<FileInfoDTO> FileInfoList { get; }
 
@@ -42,8 +51,10 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
         this.device = device ?? throw new ArgumentNullException(nameof(device));
         OpenedDirectoryHistory = new ObservableCollection<string>();
         FileInfoList = new ObservableCollection<FileInfoDTO>();
+        
         OpenedDirectoryHistory.CollectionChanged += (_, _) =>
         {
+            TotalFilesAmount = FileInfoList.Count; 
             FullPath = string.Join('\\', OpenedDirectoryHistory);
             OnPropertyChanged(nameof(OpenedDirectoryHistory));
         };
@@ -69,12 +80,19 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
     private ICommand openByUserPathDirectoryCommand;
     public ICommand OpenByUserPathDirectoryCommand => openByUserPathDirectoryCommand ??= new AsyncCommand(OpenByUserPathDirectoryAsync);
 
-    private ICommand downloadFileCommand;
-    public ICommand DownloadFileComamnd => downloadFileCommand ??= new AsyncCommand<FileInfoDTO>(DownloadFileAsync);
-    
-    private ICommand downloadDirectoryCommand;
-    public ICommand DownloadDirectoryCommand => downloadDirectoryCommand ??= new AsyncCommand<FileInfoDTO>(DownloadDirectoryAsync);
+    private ICommand downloadItemCommand;
+    public ICommand DownloadItemComamnd => downloadItemCommand ??= new AsyncCommand<FileInfoDTO>(DownloadItemAsync);
 
+    private Task DownloadItemAsync(FileInfoDTO fileInfo)
+    {
+        return fileInfo.FileType switch
+        {
+            FileType.File => DownloadFileAsync(fileInfo),
+            FileType.Directory => DownloadDirectoryAsync(fileInfo),
+            _ => Task.CompletedTask
+        };
+    }
+    
     private async Task LoadFilesInRootAsync()
     {
         if (IsLoad) return;
@@ -158,7 +176,7 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
                 bool fileLengthComparison = false;
                 if (int.TryParse(SearchText, out int fileLength))
                 {
-                    fileLengthComparison = x.FileLengthMb == fileLength;
+                    fileLengthComparison = x.FileLength == fileLength;
                 }
 
                 return !(nameComparison || dateComparison || fileLengthComparison);
@@ -172,7 +190,7 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
 
     private async Task OpenByUserPathDirectoryAsync()
     {
-        if (string.IsNullOrWhiteSpace(FullPath) || FullPath.Length < device.DeviceName.Length  || IsLoad) return;
+        if (string.IsNullOrWhiteSpace(FullPath) || FullPath.Length < device.DeviceName.Length  || IsLoad || IsDownload) return;
         IsLoad = true;
         
         path = "root" + FullPath[device.DeviceName.Length..];
@@ -209,22 +227,29 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
 
     private async Task DownloadFileAsync(FileInfoDTO fileInfo)
     {
-        if (fileInfo == null || fileInfo.FileType != FileType.File || IsLoad) return;
-        IsLoad = true;
+        if (fileInfo == null || fileInfo.FileType != FileType.File || IsLoad || IsDownload) return;
+        IsDownload = true;
 
         string downloadDirPath =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-        string downloadPath = FileSaver.CreateUniqDownloadPath(fileInfo.Name, downloadDirPath);
+        string downloadPath = FileSaver.CreateUniqueDownloadPath(fileInfo.Name, downloadDirPath);
         CancellationTokenSource tokenSource = new CancellationTokenSource(1000000);
         try
         {
+            DownloadableFileName = fileInfo.Name;
+            TotalBytesAmount = fileInfo.FileLength!.Value;
+            progress = new Progress<long>(value =>
+            {
+                DownloadableBytesAmount = value;
+                PercentDownloaded = (int)(value * 1.0 / fileInfo.FileLength * 100);
+            });
+            
             using (FileStream fs = File.OpenWrite(downloadPath))
             {
-                await apiProvider.DownloadFileAsync(userServices.CurrentUser, device, fileInfo.FullName, fs,
-                    tokenSource.Token);
+                await apiProvider.DownloadFileAsync(userServices.CurrentUser, device, fileInfo.FullName, fs, progress, tokenSource.Token);
             }
             
-            IsLoad = false;
+            IsDownload = false;
             
             MessageBoxResult dialogResult = MessageBox.Show("Файл сохранен в папку загрузки. Открыть расположение?",
                 "Команда выполнена",
@@ -237,30 +262,29 @@ public partial class DeviceFolderViewModel : ViewModelBase<DeviceFolderUC>, ITra
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            IsLoad = false;
+            IsDownload = false;
         }
         finally
         {
-            tokenSource.Cancel();
+            await tokenSource.CancelAsync();
             tokenSource.Dispose();
         }
     }
 
     private async Task DownloadDirectoryAsync(FileInfoDTO fileInfo)
     {
-        if (fileInfo == null || fileInfo.FileType != FileType.Directory || IsLoad) return;
+        if (fileInfo == null || fileInfo.FileType != FileType.Directory || IsLoad || IsDownload) return;
         IsLoad = true;
 
         string downloadDirPath =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-        string downloadPath = FileSaver.CreateUniqDownloadPath($"{fileInfo.Name}.rar", downloadDirPath);
+        string downloadPath = FileSaver.CreateUniqueDownloadPath($"{fileInfo.Name}.rar", downloadDirPath);
         CancellationTokenSource tokenSource = new CancellationTokenSource(1000000);
         try
         {
             using (FileStream fs = File.OpenWrite(downloadPath))
             {
-                await apiProvider.DownloadDirectoryAsync(userServices.CurrentUser, device, fileInfo.FullName, fs,
-                    tokenSource.Token);
+                await apiProvider.DownloadDirectoryAsync(userServices.CurrentUser, device, fileInfo.FullName, fs, progress, tokenSource.Token);
             }
             
             IsLoad = false;

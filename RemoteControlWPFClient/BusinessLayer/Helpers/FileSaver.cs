@@ -5,7 +5,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Helpers;
 
 public static class FileSaver
 {
-    public static string CreateUniqDownloadPath(string fileName, string downloadDirectory)
+    public static string CreateUniqueDownloadPath(string fileName, string downloadDirectory)
     {
         if (string.IsNullOrWhiteSpace(fileName))
             throw new ArgumentException("Value cannot be null or whitespace.", nameof(fileName));
@@ -29,7 +29,7 @@ public static class FileSaver
         int i = 1;
         while (File.Exists(Path.Combine(fullPath, fileNameWithoutExtension + extension)))
         {
-            fileNameWithoutExtension = fileNameWithoutExtensionConst + $"({i++})";
+            fileNameWithoutExtension = fileNameWithoutExtensionConst + $" ({i++})";
         }
 
         return Path.Combine(fullPath, fileNameWithoutExtension + extension);

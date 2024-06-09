@@ -113,8 +113,24 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                 userServices.Enter(userDto);
 				await CredentialsHelper.WriteUserTokenToFileAsync(userToken, tokenSource.Token);
 
-                bool connected = await communicator.ConnectAsync(ServerAPIProvider.ServerAddress, 11000, tokenSource.Token);
-                if (!connected) return;
+                bool connected = communicator.IsConnected;
+                if (connected)
+                {
+                    userDto.AuthToken = userToken;
+                    currentUser.Enter(userDto);
+                    HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
+                    await eventBus.Publish(new ChangeControlEvent(control, false));
+                    tokenSource.Dispose();
+                    return;
+                }
+
+                connected = await communicator.ConnectAsync(ServerAPIProvider.ServerAddress, 11000, tokenSource.Token);
+                if (!connected)
+                {
+                    MessageBox.Show("Ошибка подключения к серверу. Попробуйте позже", "Ошибка", MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    return;
+                }
 
                 communicator.SetExternalPublicKey(userToken);
                 int repeat = 0;
@@ -201,8 +217,24 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                 userServices.Enter(userDto);
                 await CredentialsHelper.WriteUserTokenToFileAsync(userToken, tokenSource.Token);
                 
-                bool connected = await communicator.ConnectAsync(ServerAPIProvider.ServerAddress, 11000, tokenSource.Token);
-                if (!connected) return;
+                bool connected = communicator.IsConnected;
+                if (connected)
+                {
+                    userDto.AuthToken = userToken;
+                    currentUser.Enter(userDto);
+                    HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
+                    await eventBus.Publish(new ChangeControlEvent(control, false));
+                    tokenSource.Dispose();
+                    return;
+                }
+
+                connected = await communicator.ConnectAsync(ServerAPIProvider.ServerAddress, 11000, tokenSource.Token);
+                if (!connected)
+                {
+                    MessageBox.Show("Ошибка подключения к серверу. Попробуйте позже", "Ошибка", MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    return;
+                }
 
                 communicator.SetExternalPublicKey(userToken);
                 int repeat = 0;
@@ -212,9 +244,12 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                     bool success = await communicator.HandshakeAsync(token: tokenSource.Token);
                     if (success)
                     {
+                        userDto.AuthToken = userToken;
+                        currentUser.Enter(userDto);
                         HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
-                        await eventBus.Publish(new ChangeControlEvent(control, true));
-						return;
+                        await eventBus.Publish(new ChangeControlEvent(control, false));
+                        tokenSource.Dispose();
+                        return;
                     }
 
                     tokenSource.TryReset();

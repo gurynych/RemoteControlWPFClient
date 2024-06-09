@@ -1,8 +1,9 @@
-﻿using System.Windows.Controls;
+﻿using System.ComponentModel;
+using System.Windows.Controls;
 
 namespace RemoteControlWPFClient.WpfLayer.ViewModels.Abstractions;
 
-public interface IViewModel
+public interface IViewModel : INotifyPropertyChanged
 {
 }
 

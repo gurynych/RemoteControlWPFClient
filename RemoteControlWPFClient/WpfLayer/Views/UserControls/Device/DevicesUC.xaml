@@ -27,7 +27,7 @@
             <ItemsControl ItemsSource="{Binding ConnectedDevices}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <UniformGrid Columns="2"/>
+                        <UniformGrid Columns="2" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
@@ -99,19 +99,41 @@
 
                                     <Button Grid.Row="1"
                                             Grid.Column="1"
-                                            Style="{StaticResource MaterialDesignOutlinedSecondaryButton}"
                                             md:ButtonProgressAssist.IsIndeterminate="True"
                                             md:ButtonProgressAssist.IsIndicatorVisible="False"
                                             md:ButtonProgressAssist.Value="-1"
                                             md:ButtonProgressAssist.IndicatorBackground="{DynamicResource MaterialDesign.Brush.Primary.Dark}"
                                             md:ButtonProgressAssist.IndicatorForeground="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
                                             md:ButtonAssist.CornerRadius="10"
+                                            Command="{Binding DataContext.OpenDeviceCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}}"
                                             HorizontalAlignment="Stretch"
                                             Margin="0 5 0 0"
                                             Click="OnOpenDeviceClick"
-                                            Command="{Binding DataContext.OpenDeviceCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"
-                                            Content="Подробнее" />
+                                            Content="Подробнее">
+                                        <Button.Style>
+                                            <Style TargetType="{x:Type Button}"
+                                                   BasedOn="{StaticResource MaterialDesignOutlinedSecondaryButton}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DeviceType}"
+                                                                 Value="PC">
+                                                        <Setter Property="IsEnabled"
+                                                                Value="True" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DeviceType}"
+                                                                 Value="Phone">
+                                                        <Setter Property="IsEnabled"
+                                                                Value="False" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DeviceType}"
+                                                                 Value="PC">
+                                                        <Setter Property="IsEnabled"
+                                                                Value="True" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
                                 </Grid>
                             </Border>
 

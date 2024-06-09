@@ -65,7 +65,7 @@ public partial class DeviceInfoViewModel : ViewModelBase<DeviceInfoUC>, ITransie
             CancellationTokenSource tokenSource = new CancellationTokenSource(50000);
             string downloadDirPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
             string screenshotPath = $"Screenshot_{Device?.DeviceName}_{DateTime.Now.ToString("dd_MM_yyyy")}.jpeg";
-            screenshotPath = FileSaver.CreateUniqDownloadPath(screenshotPath, downloadDirPath);
+            screenshotPath = FileSaver.CreateUniqueDownloadPath(screenshotPath, downloadDirPath);
 
             using (FileStream fs = File.Open(screenshotPath, FileMode.Create))
             {

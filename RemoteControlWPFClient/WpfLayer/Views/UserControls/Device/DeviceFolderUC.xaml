@@ -17,7 +17,31 @@
         <converters:LastInCollectionConverter x:Key="LastInCollectionConverter" />
         <converters:CollectionLengthGreaterThenConverter x:Key="CollectionLengthGreaterThenConverter" />
         <converters:CollectionToPathConverter x:Key="CollectionToPathConverter" />
-        <converters:BytesToReadStringConverter x:Key="BytesToReadStringConverter"/>
+        <converters:BytesToReadStringConverter x:Key="BytesToReadStringConverter" />
+
+        <Style TargetType="{x:Type ProgressBar}">
+            <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Primary}" />
+            <Setter Property="Background" Value="{DynamicResource MaterialDesign.Brush.Secondary.Dark}" />
+            <Setter Property="Height" Value="10" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Border.CornerRadius" Value="4" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ProgressBar}">
+                        <Border CornerRadius="{TemplateBinding Border.CornerRadius}"
+                                Background="{TemplateBinding Background}">
+                            <Grid>
+                                <Rectangle Name="PART_Track" />
+                                <Decorator x:Name="PART_Indicator" HorizontalAlignment="Left">
+                                    <Border Background="{TemplateBinding Foreground}"
+                                            CornerRadius="{TemplateBinding Border.CornerRadius}" />
+                                </Decorator>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">
@@ -28,6 +52,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0">
@@ -134,7 +159,7 @@
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="MouseDoubleClick">
                     <i:InvokeCommandAction Command="{Binding OpenDriveOrDirectoryCommand}"
-                                           CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}"/>
+                                           CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}" />
                 </i:EventTrigger>
             </i:Interaction.Triggers>
             <DataGrid.CellStyle>
@@ -196,7 +221,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                
+
                 <DataGridTemplateColumn Header="Имя"
                                         CanUserSort="True"
                                         SortMemberPath="Name">
@@ -226,9 +251,10 @@
                                         SortMemberPath="FileLength">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding FileLength, Converter={StaticResource BytesToReadStringConverter}}"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center" />
+                            <TextBlock
+                                Text="{Binding FileLength, Converter={StaticResource BytesToReadStringConverter}}"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -239,6 +265,7 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Focusable="False"
+                                    Command="{Binding DataContext.DownloadItemComamnd, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}}"
                                     CommandParameter="{Binding}">
                                 <Button.Style>
                                     <Style TargetType="{x:Type Button}"
@@ -253,15 +280,11 @@
                                                          Value="File">
                                                 <Setter Property="ToolTip"
                                                         Value="Скачать файл" />
-                                                <Setter Property="Command"
-                                                        Value="{Binding DataContext.DownloadFileComamnd, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}}"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding FileType}"
                                                          Value="Directory">
                                                 <Setter Property="ToolTip"
                                                         Value="Скачать архив" />
-                                                <Setter Property="Command"
-                                                        Value="{Binding DataContext.DownloadDirectoryCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}}"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -291,7 +314,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                
+
                 <DataGridTemplateColumn Header="Действие"
                                         CanUserResize="False"
                                         CanUserSort="False">
@@ -337,6 +360,7 @@
             </DataGrid.Columns>
         </DataGrid>
 
+
         <ProgressBar IsIndeterminate="True"
                      Value="0"
                      BorderThickness="4"
@@ -363,5 +387,59 @@
                 </Style>
             </ProgressBar.Style>
         </ProgressBar>
+        
+        <md:Card Grid.Row="1" 
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center"
+                 Padding="10"
+                 FontSize="14">
+            <StackPanel Orientation="Vertical">
+                <TextBlock Text="{Binding DownloadableFileName, StringFormat='{}Загрузка файла {0}'}"
+                           HorizontalAlignment="Center"
+                           Margin="0 0 0 10"
+                           TextWrapping="Wrap"
+                           FontSize="16"/>
+                <TextBlock Text="{Binding PercentDownloaded, StringFormat='{}Загружено: {0}%'}" 
+                           Margin="0 0 0 5"
+                           TextWrapping="Wrap"/>
+                <ProgressBar Maximum="100"
+                             Width="250"
+                             Value="{Binding PercentDownloaded}"
+                             Margin="0 0 0 5"/>
+                <TextBlock TextWrapping="Wrap">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="Загружено {0} из {1}">
+                            <Binding Path="DownloadableBytesAmount"
+                                     Converter="{StaticResource BytesToReadStringConverter}"/>
+                            <Binding Path="TotalBytesAmount" 
+                                     Converter="{StaticResource BytesToReadStringConverter}"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+            </StackPanel>
+            <md:Card.Style>
+                <Style TargetType="{x:Type md:Card}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsDownload}"
+                                     Value="True">
+                            <Setter Property="Visibility"
+                                    Value="Visible" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsDownload}"
+                                     Value="False">
+                            <Setter Property="Visibility"
+                                    Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </md:Card.Style>
+        </md:Card>
+
+        <Grid Grid.Row="2">
+            <TextBlock Text="{Binding TotalFilesAmount, StringFormat='{}Всего элементов: {0}'}"
+                       HorizontalAlignment="Right"
+                       FontSize="14"
+                       Margin="5 0" />
+        </Grid>
     </Grid>
 </UserControl>

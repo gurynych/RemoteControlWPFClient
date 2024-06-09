@@ -70,7 +70,12 @@
             <Menu Grid.Column="1"
                   FontSize="16"
                   HorizontalAlignment="Right">
-                <MenuItem Header="{Binding UserLogin}"/>
+                <MenuItem Header="{Binding UserLogin}">
+                    <MenuItem Header="Переподключиться"
+                              Command="{Binding ReconnectCommand}"/>
+                    <MenuItem Header="Выйти"
+                              Command="{Binding LogOutCommad}"/>
+                </MenuItem>
             </Menu>
         </Grid>
      

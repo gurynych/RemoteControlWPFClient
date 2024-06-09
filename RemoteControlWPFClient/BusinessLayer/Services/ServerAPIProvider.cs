@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NetworkMessage.CommandFactory;
@@ -12,6 +14,7 @@ using NetworkMessage.DTO;
 using Newtonsoft.Json;
 using RemoteControlWPFClient.BusinessLayer.DTO;
 using RemoteControlWPFClient.WpfLayer.IoC;
+using RemoteControlWPFClient.BusinessLayer.Extensions;
 using FileInfoDTO = RemoteControlWPFClient.BusinessLayer.DTO.FileInfoDTO;
 
 namespace RemoteControlWPFClient.BusinessLayer.Services
@@ -39,7 +42,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
         }
 
 		/// <summary>
-		/// Асинхронный метод для авторизации пользователя с API сервера
+			/// Асинхронный метод для авторизации пользователя с API сервера
 		/// </summary>
 		/// <param name="user"></param>
 		/// <returns>Открытый ключ сервера</returns>
@@ -125,7 +128,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 			}
 		}
 
-		public async Task<DeviceStatusesDTO> GetDeviceStatuses(UserDTO user, DeviceDTO device, CancellationToken token = default)
+		public async Task<DeviceStatusesDTO> GetDeviceStatusesAsync(UserDTO user, DeviceDTO device, CancellationToken token = default)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (device == null) throw new ArgumentNullException(nameof(device));
@@ -155,7 +158,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 			}	
 		}
 		
-		public async IAsyncEnumerable<FileInfoDTO> GetNestedFilesInfoInDirectoryAsync(UserDTO user, DeviceDTO device, string path, CancellationToken token = default)
+		public async IAsyncEnumerable<FileInfoDTO> GetNestedFilesInfoInDirectoryAsync(UserDTO user, DeviceDTO device, string path, [EnumeratorCancellation] CancellationToken token = default)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (device == null) throw new ArgumentNullException(nameof(device));
@@ -203,7 +206,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 			}
 		}
 		
-		public async Task DownloadFileAsync(UserDTO user, DeviceDTO device, string path, Stream streamToWrite, CancellationToken token = default)
+		public async Task DownloadFileAsync(UserDTO user, DeviceDTO device, string path, Stream streamToWrite, IProgress<long> progress = null, CancellationToken token = default)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (device == null) throw new ArgumentNullException(nameof(device));
@@ -221,7 +224,10 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 				if (response.IsSuccessStatusCode)
 				{
 					using (Stream stream = await response.Content.ReadAsStreamAsync(token))
-						await stream.CopyToAsync(streamToWrite);
+					{
+						int bufferSize = 1024 * 512;
+						await stream.CopyToAsync(streamToWrite, bufferSize, progress, token);
+					}
 				}
 				else
 				{
@@ -236,7 +242,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 			}
 		}
 		
-		public async Task DownloadDirectoryAsync(UserDTO user, DeviceDTO device, string path, Stream streamToWrite, CancellationToken token = default)
+		public async Task DownloadDirectoryAsync(UserDTO user, DeviceDTO device, string path, Stream streamToWrite, IProgress<long> progress = null, CancellationToken token = default)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (device == null) throw new ArgumentNullException(nameof(device));
@@ -253,8 +259,11 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 				HttpResponseMessage response = await client.GetAsync(requestUri, token);
 				if (response.IsSuccessStatusCode)
 				{
-					Stream stream = await response.Content.ReadAsStreamAsync(token);
-					await stream.CopyToAsync(streamToWrite);
+					using (Stream stream = await response.Content.ReadAsStreamAsync(token))
+					{
+						int bufferSize = 1024 * 512;
+						await stream.CopyToAsync(streamToWrite, bufferSize, progress, token);
+					}
 				}
 				else
 				{
@@ -312,16 +321,13 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 				string requestUri = GetUserByTokenUri +
 					$"?userToken={encodedToken}";
 
-				 response = await client.GetAsync(requestUri, token);
-
-				//ByteArrayContent bytesContent = new ByteArrayContent(userToken);
-				//HttpResponseMessage response = await client.PostAsync(GetConnectedDeviceUri, bytesContent, token);
+				response = await client.GetAsync(requestUri, token);
 				if (response.IsSuccessStatusCode)
 				{
 					string responseContent = await response.Content.ReadAsStringAsync(token);
 					UserDTO u = JsonConvert.DeserializeObject<UserDTO>(responseContent);
 					u.AuthToken = usertoken;
-					return JsonConvert.DeserializeObject<UserDTO>(responseContent);
+					return u;
 				}
 				
 				throw new InvalidOperationException();
@@ -404,7 +410,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 		/// <exception cref="SEHException"/>
 		private async Task<FormUrlEncodedContent> GetAuthWithTokenParametersAsync(string userToken, CancellationToken token = default)
 		{
-			DeviceGuidResult guidResult = await factory.CreateGuidCommand().ExecuteAsync(token).ConfigureAwait(false) as DeviceGuidResult;
+			GuidResult guidResult = await factory.CreateGuidCommand().ExecuteAsync(token).ConfigureAwait(false) as GuidResult;
 			var parameters = new Dictionary<string, string>
 			{
 				{ "userToken", userToken },
@@ -426,7 +432,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 		/// <exception cref="SEHException"/>
 		private async Task<FormUrlEncodedContent> GetAuthParametersAsync(UserDTO user, CancellationToken token = default)
         {
-            DeviceGuidResult guidResult = await factory.CreateGuidCommand().ExecuteAsync(token).ConfigureAwait(false) as DeviceGuidResult;
+            GuidResult guidResult = await factory.CreateGuidCommand().ExecuteAsync(token).ConfigureAwait(false) as GuidResult;
             var parameters = new Dictionary<string, string>
             {
                 { "email", user.Email },
@@ -450,7 +456,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
         /// <exception cref="SEHException"/>
         private async Task<FormUrlEncodedContent> GetRegParametersAsync(UserDTO user, CancellationToken token = default)
         {
-            DeviceGuidResult guidResult = await factory.CreateGuidCommand().ExecuteAsync(token).ConfigureAwait(false) as DeviceGuidResult;
+            GuidResult guidResult = await factory.CreateGuidCommand().ExecuteAsync(token).ConfigureAwait(false) as GuidResult;
             var parameters = new Dictionary<string, string>
             {
                 { "login",user.Login },
