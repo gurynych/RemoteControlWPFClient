@@ -82,7 +82,7 @@
 
   <ItemGroup>
     <Reference Include="NetworkMessage">
-      <HintPath>..\..\RemoteControlCommunicator\NetworkMessage\bin\Debug\net8.0\NetworkMessage.dll</HintPath>
+      <HintPath>..\..\NetworkMessage.Windows\NetworkMessage.Windows\bin\Debug\net8.0-windows7.0\NetworkMessage.dll</HintPath>
     </Reference>
     <Reference Include="NetworkMessage.Windows">
       <HintPath>..\..\NetworkMessage.Windows\NetworkMessage.Windows\bin\Debug\net8.0-windows7.0\NetworkMessage.Windows.dll</HintPath>

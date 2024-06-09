@@ -60,9 +60,9 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
             {
                 tokenSource = new CancellationTokenSource(120000);
                 Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
                 try
                 {
-                    stopwatch.Start();
                     byte[] userToken = await CredentialsHelper.ReadUserTokenFromFileAsync(tokenSource.Token);
                     byte[] serverPublicKey =
                         await apiProvider.UserAuthorizationWithTokenUseAPIAsync(userToken, tokenSource.Token);
@@ -72,7 +72,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                     {
                         MessageBox.Show("Не удалось подключиться", "Ошибка подключения", MessageBoxButton.OK,
                             MessageBoxImage.Error);
-                        throw new Exception();
+                        return;
                     }
 
                     bool connected =
@@ -88,7 +88,6 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                         if (success)
                         {
                             UserDTO userDto = await apiProvider.GetUserByToken(userToken);
-                            userDto.AuthToken = userToken;
                             currentUser.Enter(userDto);
                             MainWindow mainWindow = IoCContainer.OpenViewModel<MainViewModel, MainWindow>();
                             window.Close();

@@ -13,14 +13,20 @@ using RemoteControlWPFClient.WpfLayer.IoC;
 
 namespace RemoteControlWPFClient.BusinessLayer.Services
 {
-	public class CommandsRecipientService : ISingleton
+	public class CommandsRecipientService : ISingleton, IDisposable
 	{
 		private readonly Task task;
-		private readonly Queue<BaseIntent> receivedIntents;
 		private readonly CancellationTokenSource tokenSource;
+		private readonly TcpCryptoClientCommunicator communicator;
+		private readonly ICommandFactory factory;
+		private readonly ServerConectionService conectionService;
+		private readonly Queue<BaseIntent> receivedIntents;
 
-		public CommandsRecipientService(TcpCryptoClientCommunicator communicator, ICommandFactory factory)
+		public CommandsRecipientService(TcpCryptoClientCommunicator communicator, ICommandFactory factory, ServerConectionService conectionService)
 		{
+			this.communicator = communicator ?? throw new ArgumentNullException(nameof(communicator));
+			this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
+			this.conectionService = conectionService ?? throw new ArgumentNullException(nameof(conectionService));
 			receivedIntents = new Queue<BaseIntent>();
 			tokenSource = new CancellationTokenSource();
 			task = new Task(async () => await ActionAsync(communicator, factory));
@@ -45,7 +51,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 
 		private async Task ActionAsync(TcpCryptoClientCommunicator communicator, ICommandFactory factory, CancellationToken token = default)
 		{
-			Progress<long> progress = new Progress<long>(i=>Debug.WriteLine(i));
+			//Progress<long> progress = new Progress<long>(i=>Debug.WriteLine(i));
 
 			while (!token.IsCancellationRequested)
 			{
@@ -64,7 +70,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 						.ExecuteAsync()
 						.ConfigureAwait(false);
 
-					await communicator.SendObjectAsync(result, progress, token: token).ConfigureAwait(false);
+					await communicator.SendObjectAsync(result, token: token).ConfigureAwait(false);
 				}
 				catch (DeviceNotConnectedException notConnEx)
 				{
@@ -73,7 +79,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 					return;
 				}
 				catch (OperationCanceledException operationCanncelEx)
-				{
+				{	
 					MessageBox.Show("Время ожидания превышено");
 					Debug.WriteLine(operationCanncelEx.Message);
 					return;
@@ -82,7 +88,25 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 				{
 					MessageBox.Show(ex.Message);
 					Debug.WriteLine(ex.Message);
+					return;
+					//await conectionService.ReconnectAsync().ConfigureAwait(false);
 				}
+			}
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+		
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing) 
+			{
+				task?.Dispose();
+				tokenSource?.Dispose();
+				communicator?.Dispose();
 			}
 		}
 	}

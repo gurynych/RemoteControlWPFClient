@@ -17,8 +17,6 @@ namespace RemoteControlWPFClient.BusinessLayer.DTO
 
         public long? FileLength { get; set; }
 
-        public long? FileLengthMb { get; set; }
-
         public PackIconKind FileTypeIcon { get; set; }
 
         public FileType FileType { get; set; }
