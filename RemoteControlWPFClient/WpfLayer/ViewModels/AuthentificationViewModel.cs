@@ -123,10 +123,9 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                 bool connected = communicator.IsConnected;
                 if (connected)
                 {
-                    user.AuthToken = userToken;
                     currentUser.Enter(user);
                     HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
-                    await eventBus.Publish(new ChangeControlEvent(control, false));
+                    await eventBus.Publish(new ChangeControlEvent(this, control, false, false));
                     tokenSource.Dispose();
                     return;
                 }
@@ -148,10 +147,9 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                     bool success = await communicator.HandshakeAsync(token: tokenSource.Token);
                     if (success)
                     {
-                        user.AuthToken = userToken;
                         currentUser.Enter(user);
                         HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
-						await eventBus.Publish(new ChangeControlEvent(control, false));
+						await eventBus.Publish(new ChangeControlEvent(this, control, false, false));
 						tokenSource.Dispose();
 						return;
                     }
@@ -229,10 +227,9 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                 bool connected = communicator.IsConnected;
                 if (connected)
                 {
-                    user.AuthToken = userToken;
                     currentUser.Enter(user);
                     HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
-                    await eventBus.Publish(new ChangeControlEvent(control, false));
+                    await eventBus.Publish(new ChangeControlEvent(this, control, false, false));
                     tokenSource.Dispose();
                     return;
                 }
@@ -254,10 +251,9 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                     bool success = await communicator.HandshakeAsync(token: tokenSource.Token);
                     if (success)
                     {
-                        user.AuthToken = userToken;
                         currentUser.Enter(user);
                         HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
-                        await eventBus.Publish(new ChangeControlEvent(control, false));
+                        await eventBus.Publish(new ChangeControlEvent(this, control, false, false));
                         tokenSource.Dispose();
                         return;
                     }

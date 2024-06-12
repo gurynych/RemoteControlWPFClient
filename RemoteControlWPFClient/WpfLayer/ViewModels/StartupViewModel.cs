@@ -12,6 +12,8 @@ using System.Runtime.InteropServices;
 using NetworkMessage.CommandFactory;
 using NetworkMessage.Communicator;
 using System.Diagnostics;
+using System.Text;
+using NetworkMessage.Cryptography.AsymmetricCryptography;
 using RemoteControlWPFClient.BusinessLayer.DTO;
 using RemoteControlWPFClient.BusinessLayer.Helpers;
 using RemoteControlWPFClient.BusinessLayer.Services;
@@ -69,17 +71,18 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                         await apiProvider.UserAuthorizationWithTokenUseAPIAsync(userToken, tokenSource.Token);
 
                     //доделать метод api
-                          if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
+                    if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
                     {
-                        MessageBox.Show("Не удалось подключиться", "Ошибка подключения", MessageBoxButton.OK,
+                        MessageBox.Show("Сервер недоступен.\nПожалуйста, повторите попытку позже", "Ошибка подключения", MessageBoxButton.OK,
                             MessageBoxImage.Error);
-                        return;
+                        throw new Exception();
                     }
 
                     bool connected =
                         await communicator.ConnectAsync(ServerAPIProvider.ServerAddress, 11000, tokenSource.Token);
                     if (!connected) return;
 
+                    serverPublicKey = serverPublicKey[..^Encoding.UTF8.GetBytes(user.Email).Length];
                     communicator.SetExternalPublicKey(serverPublicKey);
                     int repeat = 0;
 
@@ -95,7 +98,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                             mainWindow?.Show();
 
                             HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
-                            await eventBus.Publish(new ChangeControlEvent(control, true));
+                            await eventBus.Publish(new ChangeControlEvent(this, control, true, false));
                             return;
                         }
 
@@ -123,7 +126,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 
                     AuthentifcationUC control =
                         IoCContainer.OpenViewModel<AuthentificationViewModel, AuthentifcationUC>();
-                    await eventBus.Publish(new ChangeControlEvent(control, false));
+                    await eventBus.Publish(new ChangeControlEvent(this, control, false, false));
                 }
                 finally
                 {

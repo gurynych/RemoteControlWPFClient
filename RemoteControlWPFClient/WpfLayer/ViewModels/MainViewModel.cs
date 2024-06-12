@@ -45,16 +45,18 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 
             userLogin = currentUser.CurrentUser?.Login;
             MenuVisibility = Visibility.Collapsed;
-            eventBus?.Subscribe<ChangeControlEvent>(@event => ChangeControl(@event.NewControl, @event.ClearHistory));
+            eventBus?.Subscribe<ChangeControlEvent>(@event => ChangeControl(@event.Sender, @event.NewControl, @event.ClearHistory, @event.AddToHistory));
             OpenedControlsHistory.CollectionChanged += (_, _) => OnPropertyChanged(nameof(OpenedControlsHistory));
         }
 
         /// <summary>
         /// Метод для смены UserControl
         /// </summary>
+        /// <param name="sender"></param>
         /// <param name="newControl">Новый контрол для отображения на MainWindow</param>
         /// <param name="clearHistory">Флаг, указывающий нужно ли стереть историю открытых контролов</param>
-        private Task ChangeControl(Control newControl, bool clearHistory)
+        /// <param name="addToHistory"></param>
+        private Task ChangeControl(object sender, Control newControl, bool clearHistory, bool addToHistory)
         {
             MenuVisibility = (newControl is AuthentifcationUC) ? Visibility.Collapsed : Visibility.Visible;
             if (clearHistory)
@@ -62,7 +64,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                 OpenedControlsHistory.Clear();
             }
 
-            if (newControl is not HomeUC)
+            if (addToHistory)
             {
                 OpenedControlsHistory.Add(newControl);
             }
@@ -92,7 +94,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
         {   
             if (CurrentControl is DevicesUC) return Task.CompletedTask;
             DevicesUC control = IoCContainer.OpenViewModel<DevicesViewModel, DevicesUC>();
-            return eventBus.Publish(new ChangeControlEvent(control, false));
+            return eventBus.Publish(new ChangeControlEvent(this, control, false, true));
         }
 
         private Task PopOpenedControlHistoryAsync()
@@ -116,7 +118,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
         {
             if (CurrentControl is HomeUC) return Task.CompletedTask;
             HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
-            return eventBus.Publish(new ChangeControlEvent(control, true));
+            return eventBus.Publish(new ChangeControlEvent(this, control, true, false));
         }
 
         private Task LogOutAsync()
@@ -133,7 +135,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
             }
 
             AuthentifcationUC control = IoCContainer.OpenViewModel<AuthentificationViewModel, AuthentifcationUC>();
-            return eventBus.Publish(new ChangeControlEvent(control, true));
+            return eventBus.Publish(new ChangeControlEvent(this, control, true, false));
         }
 
         private Task ReconnectAsync()

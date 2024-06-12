@@ -49,13 +49,13 @@ public partial class DeviceInfoViewModel : ViewModelBase<DeviceInfoUC>, ITransie
     private async Task OpenDeviceFolderAsync()
     {
         DeviceFolderUC control = IoCContainer.OpenViewModel<DeviceFolderViewModel, DeviceFolderUC>(Device);
-        await eventBus.Publish(new ChangeControlEvent(control, false));
+        await eventBus.Publish(new ChangeControlEvent(this, control, false, true));
     }
     
     private async Task OpenRunningProgramsAsync()
     {
         RunninProgramsUC control = IoCContainer.OpenViewModel<RunningProgramsViewModel, RunninProgramsUC>(Device);
-        await eventBus.Publish(new ChangeControlEvent(control, false));
+        await eventBus.Publish(new ChangeControlEvent(this, control, false, true));
     }
 
     private async Task DownloadScreenshotAsync()

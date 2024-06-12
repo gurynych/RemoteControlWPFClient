@@ -69,7 +69,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 
                 DeviceInfoUC control =
                     IoCContainer.OpenViewModel<DeviceInfoViewModel, DeviceInfoUC>(device, deviceStatuses);
-                await eventBus.Publish(new ChangeControlEvent(control, false));
+                await eventBus.Publish(new ChangeControlEvent(this, control, false, true));
             }
             catch (Exception ex)
             {

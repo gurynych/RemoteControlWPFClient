@@ -83,7 +83,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 		public ICommand OpenDevices => new AwaitableCommand(async () =>
 		{
 			DevicesUC control = IoCContainer.OpenViewModel<DevicesViewModel, DevicesUC>();
-			await eventBus.Publish(new ChangeControlEvent(control, false));
+			await eventBus.Publish(new ChangeControlEvent(this, control, false, true));
 		});
 	}
 }
