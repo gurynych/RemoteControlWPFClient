@@ -1,9 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using Newtonsoft.Json;
+using RemoteControlWPFClient.BusinessLayer.DTO;
 
 namespace RemoteControlWPFClient.BusinessLayer.Helpers
 {
@@ -25,9 +28,9 @@ namespace RemoteControlWPFClient.BusinessLayer.Helpers
         /// </summary>                
         /// <exception cref="FileNotFoundException"/>
         /// <exception cref="OperationCanceledException"/>        
-        public static async Task<byte[]> ReadUserTokenFromFileAsync(CancellationToken token = default)
+        public static async Task<UserDTO> ReadUserTokenFromFileAsync(CancellationToken token = default)
         {
-			return await File.ReadAllBytesAsync(userDataPath, token).ConfigureAwait(false);        
+			return JsonConvert.DeserializeObject<UserDTO>((await File.ReadAllTextAsync(userDataPath, token).ConfigureAwait(false)));        
         }
 
         /// <summary>
@@ -35,9 +38,10 @@ namespace RemoteControlWPFClient.BusinessLayer.Helpers
         /// </summary>
         /// <param name="user">Текущий пользователь</param>               
         /// <exception cref="OperationCanceledException"/>
-        public static async Task WriteUserTokenToFileAsync(byte[] userToken, CancellationToken token = default)
-        {        
-            await File.WriteAllBytesAsync(userDataPath, userToken, token).ConfigureAwait(false);                       
+        public static async Task WriteUserToFileAsync(UserDTO user, CancellationToken token = default)
+        {
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            await File.WriteAllTextAsync(userDataPath, JsonConvert.SerializeObject(user), token).ConfigureAwait(false);
         }
 
     }

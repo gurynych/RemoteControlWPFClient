@@ -63,12 +63,13 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                 stopwatch.Start();
                 try
                 {
-                    byte[] userToken = await CredentialsHelper.ReadUserTokenFromFileAsync(tokenSource.Token);
+                    UserDTO user = await CredentialsHelper.ReadUserTokenFromFileAsync(tokenSource.Token);
+                    byte[] userToken = user.AuthToken;
                     byte[] serverPublicKey =
                         await apiProvider.UserAuthorizationWithTokenUseAPIAsync(userToken, tokenSource.Token);
 
                     //доделать метод api
-                    if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
+                          if (serverPublicKey == default || serverPublicKey.IsEmptyOrSingle())
                     {
                         MessageBox.Show("Не удалось подключиться", "Ошибка подключения", MessageBoxButton.OK,
                             MessageBoxImage.Error);

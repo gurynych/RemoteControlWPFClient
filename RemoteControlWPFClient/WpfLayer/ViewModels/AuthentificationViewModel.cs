@@ -11,6 +11,8 @@ using System.Windows;
 using System.Windows.Input;
 using NetworkMessage.Communicator;
 using System.Diagnostics;
+using System.Linq;
+using System.Text;
 using NetworkMessage.CommandFactory;
 using RemoteControlWPFClient.BusinessLayer.DTO;
 using RemoteControlWPFClient.BusinessLayer.Helpers;
@@ -85,11 +87,15 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
 
         private ICommand authorizationCommand;
         public ICommand AuthorizationCommand => authorizationCommand ??=
-            new AwaitableCommand(AuthorizeWithConnectToServerAsync, _ => !HasErrors);
+            new AwaitableCommand(AuthorizeWithConnectToServerAsync, _ => !GetErrors(nameof(AuthEmail)).Any() &&
+                                                                         !GetErrors(nameof(AuthPassword)).Any());
 
         private ICommand registrationCommand;
+
         public ICommand RegistrationCommand => registrationCommand ??=
-            new AwaitableCommand(RegisterWithConnectToServerAsync, _ => !HasErrors);
+            new AwaitableCommand(RegisterWithConnectToServerAsync, _ => !GetErrors(nameof(RegLogin)).Any() &&
+                                                                        !GetErrors(nameof(RegEmail)).Any() &&
+                                                                        !GetErrors(nameof(RegPassword)).Any());
 
         
         /// <summary>
@@ -99,25 +105,26 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
         {
             try
             {
-                UserDTO userDto = new UserDTO(AuthEmail, AuthPassword);
+                UserDTO user = new UserDTO(AuthEmail, AuthPassword);
                 tokenSource = new CancellationTokenSource(20000);
-				byte[] userToken = await apiProvider.UserAuthorizationUseAPIAsync(userDto, tokenSource.Token);
+                Response response = await apiProvider.UserAuthorizationUseAPIAsync(user, tokenSource.Token);
+				byte[] userToken = response.PublicKey;
                 
 				if (userToken == default || userToken.IsEmptyOrSingle())
                 {
-                    MessageBox.Show("Неверные данные","Ошибка",MessageBoxButton.OK,MessageBoxImage.Error);
+                    MessageBox.Show(response.Message,"Ошибка",MessageBoxButton.OK,MessageBoxImage.Error);
                     return;
                 }
 
-                userDto = await apiProvider.GetUserByToken(userToken, tokenSource.Token);
-                userServices.Enter(userDto);
-				await CredentialsHelper.WriteUserTokenToFileAsync(userToken, tokenSource.Token);
+                user = await apiProvider.GetUserByToken(userToken, tokenSource.Token);
+                userServices.Enter(user);
+				await CredentialsHelper.WriteUserToFileAsync(user, tokenSource.Token);
 
                 bool connected = communicator.IsConnected;
                 if (connected)
                 {
-                    userDto.AuthToken = userToken;
-                    currentUser.Enter(userDto);
+                    user.AuthToken = userToken;
+                    currentUser.Enter(user);
                     HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
                     await eventBus.Publish(new ChangeControlEvent(control, false));
                     tokenSource.Dispose();
@@ -132,6 +139,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                     return;
                 }
 
+                userToken = userToken[..^Encoding.UTF8.GetBytes(AuthEmail).Length];
                 communicator.SetExternalPublicKey(userToken);
                 int repeat = 0;
 
@@ -140,8 +148,8 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                     bool success = await communicator.HandshakeAsync(token: tokenSource.Token);
                     if (success)
                     {
-                        userDto.AuthToken = userToken;
-                        currentUser.Enter(userDto);
+                        user.AuthToken = userToken;
+                        currentUser.Enter(user);
                         HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
 						await eventBus.Publish(new ChangeControlEvent(control, false));
 						tokenSource.Dispose();
@@ -203,25 +211,26 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
         {
             try
             {
-                UserDTO userDto = new UserDTO(RegLogin, RegEmail, RegPassword);
-                tokenSource = new CancellationTokenSource(20000);
-                byte[] userToken = await apiProvider.UserRegistrationUseAPIAsync(userDto, tokenSource.Token);
+                UserDTO user = new UserDTO(RegLogin, RegEmail, RegPassword);
+                tokenSource = new CancellationTokenSource(30000);
+                Response response = await apiProvider.UserRegistrationUseAPIAsync(user, tokenSource.Token);
+                byte[] userToken = response.PublicKey;
                 if (userToken == default || userToken.IsEmptyOrSingle())
                 {
-                    MessageBox.Show("Неверные данные", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(response.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                     //throw new NullReferenceException();
                 }
 
-                userDto = await apiProvider.GetUserByToken(userToken, tokenSource.Token);
-                userServices.Enter(userDto);
-                await CredentialsHelper.WriteUserTokenToFileAsync(userToken, tokenSource.Token);
+                user = await apiProvider.GetUserByToken(userToken, tokenSource.Token);
+                userServices.Enter(user);
+                await CredentialsHelper.WriteUserToFileAsync(user, tokenSource.Token);
                 
                 bool connected = communicator.IsConnected;
                 if (connected)
                 {
-                    userDto.AuthToken = userToken;
-                    currentUser.Enter(userDto);
+                    user.AuthToken = userToken;
+                    currentUser.Enter(user);
                     HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
                     await eventBus.Publish(new ChangeControlEvent(control, false));
                     tokenSource.Dispose();
@@ -236,6 +245,7 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                     return;
                 }
 
+                userToken = userToken[..^Encoding.UTF8.GetBytes(RegEmail).Length];
                 communicator.SetExternalPublicKey(userToken);
                 int repeat = 0;
 
@@ -244,8 +254,8 @@ namespace RemoteControlWPFClient.WpfLayer.ViewModels
                     bool success = await communicator.HandshakeAsync(token: tokenSource.Token);
                     if (success)
                     {
-                        userDto.AuthToken = userToken;
-                        currentUser.Enter(userDto);
+                        user.AuthToken = userToken;
+                        currentUser.Enter(user);
                         HomeUC control = IoCContainer.OpenViewModel<HomeViewModel, HomeUC>();
                         await eventBus.Publish(new ChangeControlEvent(control, false));
                         tokenSource.Dispose();

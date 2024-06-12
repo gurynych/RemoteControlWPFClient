@@ -50,7 +50,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="FormatException"/>
 		/// <exception cref="SEHException"/>
-		public async Task<byte[]> UserAuthorizationUseAPIAsync(UserDTO user, CancellationToken token = default)
+		public async Task<Response> UserAuthorizationUseAPIAsync(UserDTO user, CancellationToken token = default)
 		{
 			using HttpClient client = new HttpClient();
 			try
@@ -60,11 +60,12 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 				if (response.IsSuccessStatusCode)
 				{
 					string responseContent = await response.Content.ReadAsStringAsync(token);
-					return Convert.FromBase64String(responseContent[1..^1]);
+					return new Response(Convert.FromBase64String(responseContent[1..^1]), "Успешно");
 				}
 
+				string message = await response.Content.ReadAsStringAsync(token);
 				Debug.WriteLine("Ошибка при выполнении запроса: " + response.StatusCode);
-				return default;
+				return new Response(message);
 			}
 			catch (Exception ex)
 			{
@@ -381,7 +382,7 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="FormatException"/>      
         /// <exception cref="SEHException"/>
-        public async Task<byte[]> UserRegistrationUseAPIAsync(UserDTO user, CancellationToken token = default)
+        public async Task<Response> UserRegistrationUseAPIAsync(UserDTO user, CancellationToken token = default)
         {
             using HttpClient client = new HttpClient();
             try
@@ -391,11 +392,12 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
                 if (response.IsSuccessStatusCode)
                 {
                     string responseContent = await response.Content.ReadAsStringAsync(token);
-                    return Convert.FromBase64String(responseContent[1..^1]);
+                    return new Response(Convert.FromBase64String(responseContent[1..^1]), "Успешно");
                 }
 
+                string message = await response.Content.ReadAsStringAsync(token);
                 Debug.WriteLine("Ошибка при выполнении запроса: " + response.StatusCode);
-                return default;
+                return new Response(message);
             }
             catch (Exception ex)
             {
@@ -472,6 +474,24 @@ namespace RemoteControlWPFClient.BusinessLayer.Services
 
             return new FormUrlEncodedContent(parameters);
         }
+    }
+
+    public struct Response
+    {
+	    public byte[] PublicKey { get; }
+
+	    public string Message { get; }
+	    
+	    public Response(string message)
+	    {
+		    Message = message;
+	    }
+	    
+	    public Response(byte[] publicKey, string message)
+	    {
+		    PublicKey = publicKey;
+		    Message = message;
+	    }
     }
     
 	internal sealed class NestedFileInfoInDirectories
